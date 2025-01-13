@@ -1,0 +1,14 @@
+KeyGpt=
+KeyGemini=
+Favorite=gemini-1.5-pro;gemini-1.5-flash;gpt-4;gpt-4o
+FieldSize=2
+Model=gemini-1.5-pro
+HistoryTokens=8192
+AnswerTokens=0
+Temperature=0
+CellWidth=20
+WaitTimeout=30
+Log=0
+Context=0
+TestModel=test
+
