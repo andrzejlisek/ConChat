@@ -65,22 +65,22 @@ public class ChatEngineGpt extends ChatEngine
         String apiEndpoint = "https://api.openai.com/v1/chat/completions";
 
         JSONObject requestBody = new JSONObject();
-        /// gpt-4o-mini    128000 | 16384
-        //  gpt-4o         128000 | 16384
-        //  gpt-4            8192
-        //  gpt-3.5-turbo   16385
-        //  gpt-3.5
-        /// code-davinci-002    - do generowania kodu
-        //  dalle-2    - do obrazkow
         requestBody.put("model", engineName);
-        //requestBody.put("model", "gpt-4o-mini");
-        //requestBody.put("model", "gpt-4o");
-        if (workDeterminic)
+        if (CommonTools.isWithinRange(CF.ParamGetI("Temperature"), 0, 200))
         {
             requestBody.put("temperature", ((double)CF.ParamGetI("Temperature")) / 100.0);       // 1.0   0.0 - 2.0
-            requestBody.put("top_p", 1.0);             // 1.0   0.0 - 1.0
-            requestBody.put("frequency_penalty", 0.0); // 0.0   0.0 - 2.0
-            requestBody.put("presence_penalty", 0.0);  // 0.0   0.0 - 2.0
+        }
+        if (CommonTools.isWithinRange(CF.ParamGetI("TopP"), 0, 100))
+        {
+            requestBody.put("top_p", ((double)CF.ParamGetI("TopP")) / 100.0);             // 1.0   0.0 - 1.0
+        }
+        if (CommonTools.isWithinRange(CF.ParamGetI("FrequencyPenalty"), 0, 100))
+        {
+            requestBody.put("frequency_penalty", ((double)CF.ParamGetI("FrequencyPenalty")) / 100.0); // 0.0   0.0 - 2.0
+        }
+        if (CommonTools.isWithinRange(CF.ParamGetI("PresencePenalty"), 0, 100))
+        {
+            requestBody.put("presence_penalty", ((double)CF.ParamGetI("PresencePenalty")) / 100.0);  // 0.0   0.0 - 2.0
         }
 
         JSONArray messages = new JSONArray();

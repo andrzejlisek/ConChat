@@ -130,6 +130,13 @@ public class CommonTools
         }
     }
 
+    static boolean isWithinRange(int val, int valMin, int valMax)
+    {
+        if (val < valMin) return false;
+        if (val > valMax) return false;
+        return true;
+    }
+    
     /**
      * String find and replace several times, until the phrase to search is not contained
      * @param str String to edit

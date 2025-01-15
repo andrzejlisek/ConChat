@@ -20,7 +20,6 @@ import java.util.Map;
  */
 public class ChatEngine
 {
-    protected boolean workDeterminic = true;
     protected String apiKey = "";
     protected String engineName = "";
     protected int tokensI;

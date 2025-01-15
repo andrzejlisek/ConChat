@@ -114,6 +114,7 @@ public class ConChat
         ScreenTextDisp_[10].supplyLine("Letter with number:");
         ScreenTextDisp_[10].supplyLine(" `f_` - field size: " + CF.ParamGetI("FieldSize"));
         ScreenTextDisp_[10].supplyLine(" `t_` - temperature x100 (from 0 to 200): " + CF.ParamGetI("Temperature"));
+        ScreenTextDisp_[10].supplyLine(" `n_` - nucleus sampling x100 (from 0 to 100): " + CF.ParamGetI("TopP"));
         ScreenTextDisp_[10].supplyLine(" `h_` - history token limit: " + CommonTools.intLimited(CF.ParamGetI("HistoryTokens")));
         ScreenTextDisp_[10].supplyLine(" `a_` - answer token limit: " + CommonTools.intLimited(CF.ParamGetI("AnswerTokens")));
         ScreenTextDisp_[10].supplyLine(" `w_` - waiting timeout: " + CommonTools.intLimited(CF.ParamGetI("WaitTimeout")));
@@ -427,6 +428,13 @@ public class ConChat
                     if ((S_num >= 0) && (S_num <= 200))
                     {
                         CF.ParamSet("Temperature", S_num);
+                        if (configSave) CF.FileSave(CommonTools.applDir + CommonTools.configFileName);
+                    }
+                    break;
+                case 'n':
+                    if ((S_num >= 0) && (S_num <= 100))
+                    {
+                        CF.ParamSet("TopP", S_num);
                         if (configSave) CF.FileSave(CommonTools.applDir + CommonTools.configFileName);
                     }
                     break;

@@ -17,6 +17,12 @@ The configuration file **config\.txt** has the following options, the italic opt
 * ***Model*** \- Currently selected model name\.
 * ***FieldSize*** \- Minimum field size for input text in text lines\. The real current field size depends on current console resolution and can be increased by 1\.
 * ***Temperature*** \- Probability usage by chatbot from 0 to 200 called as **temperature**\. The 0 value causes almost deterministic chatbot working\.
+* ***TopP*** \- The **nucleus sampling** token probability threshold from 0 to 100\. The 0 value causes almost deterministic chatbot working\.
+* **TopK** \- The word set size limit for answer generation, the parameter is used for **Google Gemini** only\. The value can be:
+  * **0** \- Parameter is not used\.
+  * **From 1 to unlimited high number** \- Parameter is used with value\. The 1 value may cause chaotic answer generation while used high **Temperature** and high **TopP**\.
+* **PresencePenalty** \- Obstructing token repeat in generated answer based on token presence\. The value id from 0 to 100, while 0 means no obstruction \(no penalty\)\.
+* **FrequencyPenalty** \- Obstructing token repeat in generated answer based on token frequency\. The value id from 0 to 100, while 0 means no obstruction \(no penalty\)\.
 * ***HistoryTokens*** \- Maximum number of history tokens contained in last history messages \(questions and answers\) sent to chatbot everytime you writes the question\. The **0** value means unlimited history size, but chatbot engine may have own limit\.
 * ***AnswerTokens*** \- Maximum number of answer tokens\. Limited number may limit potential usage cost, but may cause incomplete answer\. The **0** values means unlimited answer size\.
 * ***WaitTimeout*** \- Waiting for answer timeout in seconds\.
@@ -45,6 +51,8 @@ java -jar ConChat.jar
 ```
 
 If the directory does not contain the **config\.txt** file or this file does not contain any of the API key, the **ConChat** will not run and will print the work directory, which should contain the **config\.txt** file\.
+
+In this repository, there is **StartConChat\.sh** file, starts the **ConChat** in Linux\.
 
 # ConChat usage
 

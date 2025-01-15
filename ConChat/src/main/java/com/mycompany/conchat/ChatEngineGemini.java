@@ -80,22 +80,42 @@ public class ChatEngineGemini extends ChatEngine
 
         requestBody.put("contents", messages);
         
-        if (workDeterminic)
+        JSONObject config = null;
+        if (CommonTools.isWithinRange(CF.ParamGetI("Temperature"), 0, 200))
         {
-            JSONObject config = new JSONObject();
+            if (config == null) config = new JSONObject();
             config.put("temperature", ((double)CF.ParamGetI("Temperature")) / 100.0);
-            config.put("topP", 1.0);
-            config.put("topK", 1);
-            config.put("presencePenalty", 0.0);
-            config.put("frequencyPenalty", 0.0);
-            if (CF.ParamGetI("AnswerTokens") > 0)
-            {
-                config.put("maxOutputTokens", CF.ParamGetI("AnswerTokens"));
-            }
+        }
+        if (CommonTools.isWithinRange(CF.ParamGetI("TopP"), 0, 100))
+        {
+            if (config == null) config = new JSONObject();
+            config.put("topP", ((double)CF.ParamGetI("TopP")) / 100.0);
+        }
+        if (CF.ParamGetI("TopK") >= 1)
+        {
+            if (config == null) config = new JSONObject();
+            config.put("topK", CF.ParamGetI("TopK"));
+        }
+        if (CommonTools.isWithinRange(CF.ParamGetI("PresencePenalty"), 0, 100))
+        {
+            if (config == null) config = new JSONObject();
+            config.put("presencePenalty", ((double)CF.ParamGetI("PresencePenalty")) / 100.0);
+        }
+        if (CommonTools.isWithinRange(CF.ParamGetI("FrequencyPenalty"), 0, 100))
+        {
+            if (config == null) config = new JSONObject();
+            config.put("frequencyPenalty", ((double)CF.ParamGetI("FrequencyPenalty")) / 100.0);
+        }
+        if (CF.ParamGetI("AnswerTokens") > 0)
+        {
+            if (config == null) config = new JSONObject();
+            config.put("maxOutputTokens", CF.ParamGetI("AnswerTokens"));
+        }
+        if (config != null)
+        {
             requestBody.put("generationConfig", config);
         }
-        // gemini-1.5-pro-latest
-        // gemini-1.5-flash
+
         String response = webRequest("https://generativelanguage.googleapis.com/v1beta/models/" + engineName + ":generateContent?key=" + apiKey, "", requestBody.toString());
         if (!response.startsWith("ERROR"))
         {
