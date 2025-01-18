@@ -96,6 +96,8 @@ The conversation are stored in the files named as **context0\.txt**, **context1\
 
 The chatbot actually works as stateless machine, so everytime, if you send further questions, the whole conversation history \(excluding the messages with 0 tokens\) is sent to server\. You can ommit any message from history by move into the middle of the screen and press the **Tab** key\. Ommited messages are indicated by strikethrough\. You can turn ommision off by pressing the **Tab** key one more within the same message\.
 
+The messages, which are ommited due to **0** tokens length or exceeding history tokens limit are indicated by strikethrough line at the screen edges\.
+
 In order to check the message size in tokens, you can press the **Insert** or **F12** key\. The number of token will be written into the input text field\.
 
 Everytime, if you send the question, the chat server sends the number of tokens for question and answer\. These numbers are stored in the context and erroneous messages including questions without answer, are not sent to server\. These messages are indicated by strikethrough mark in the first and last text column and will be permanently ommited\.
@@ -110,15 +112,17 @@ In this stare, there are displayed following information:
 
 
 * Number of current context\.
-* Number of messages and tokens contained in current context\. The number before slash is the number of unommited messages, the second number is number of all messages\.
+* Number of messages and tokens contained in current context, every number consists of two parts:
+  * **Before slash** \- The number of tokens/messages, which will be sent to the chatbot when you send next question\. The manual message ommision and history token limit affects the number\.
+  * **After slash** \- The number of all tokens/messages in this context\.
 * Word commands, which works in both states\.
 * The configuration parameter and one\-letter commands for change this parameters\.
 * List of favorite models, which are available and included in **Favorite** parameter in **config\.txt** file\. These models are numbered for ease change\.
 * List of archive context files treated as further items on favorite model list\.
 * List of available models with token counter\. These models are in **models\.txt** file\. The counter consists of three numbers:
-  * History token counter\.
-  * Question token counter\.
-  * Answer token counter\.
+  * **History** token counter
+  * **Question** token counter
+  * **Answer** token counter
 
 The one\-letter commands consists of single letter \(case insensitive\) and one number\. For instance, in order to set the temperature to **100**, input **t100** and press **Enter**\. In order to set waiting timeout to one minute \(60 seconds\), input **w60** and press Enter\. The value will be automatically updated\.
 

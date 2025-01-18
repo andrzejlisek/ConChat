@@ -88,7 +88,7 @@ public class ChatEngineGpt extends ChatEngine
         {
             messages.put(new JSONObject().put("role", "system").put("content", chatSystemRole));
         }
-        for (int i = contextBeginIdx(ctx); i < ctx.size(); i++)
+        for (int i = contextBeginIdx(ctx, CF); i < ctx.size(); i++)
         {
             if ((ctx.get(i).tokens > 0) && (!ctx.get(i).ommit))
             {

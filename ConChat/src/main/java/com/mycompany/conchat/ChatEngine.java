@@ -63,12 +63,13 @@ public class ChatEngine
     /**
      * Fint the first message to send as context message list within token number limit
      * @param ctx Message list
+     * @param CF_ Configuration file
      * @return Index of first message to send
      */
-    int contextBeginIdx(ArrayList<ScreenTextDispMessage> ctx)
+    public static int contextBeginIdx(ArrayList<ScreenTextDispMessage> ctx, ConfigFile CF_)
     {
         int idx = 0;
-        int tokenLimit = CF.ParamGetI("HistoryTokens");
+        int tokenLimit = CF_.ParamGetI("HistoryTokens");
         if (tokenLimit > 0)
         {
             idx = ctx.size();

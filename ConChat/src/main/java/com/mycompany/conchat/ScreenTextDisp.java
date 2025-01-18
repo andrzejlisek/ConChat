@@ -13,6 +13,8 @@ import java.util.ArrayList;
  */
 public class ScreenTextDisp
 {
+    private ConfigFile CF;
+    
     private final boolean debugLineInfo = false;
     private boolean blockUnderline = true;
     int textWidth = 80;
@@ -121,7 +123,7 @@ public class ScreenTextDisp
                 }
                 for (int ii = 1; ii < cellSeparator.size(); ii++)
                 {
-                    ScreenTextDisp cellItem = new ScreenTextDisp(ConsoleInputOutput_);
+                    ScreenTextDisp cellItem = new ScreenTextDisp(ConsoleInputOutput_, CF);
                     ScreenTextDispRawItem cellItem_ = new ScreenTextDispRawItem(textRaw.get(i), true);
                     cellItem_.remove(cellSeparator.get(ii), -1);
                     cellItem_.remove(0, cellSeparator.get(ii - 1) + 1);
@@ -958,8 +960,9 @@ public class ScreenTextDisp
     
     int supplyLineNumber;
     
-    public ScreenTextDisp(ConsoleInputOutput ConsoleInputOutput__)
+    public ScreenTextDisp(ConsoleInputOutput ConsoleInputOutput__, ConfigFile CF_)
     {
+        CF = CF_;
         ConsoleInputOutput_ = ConsoleInputOutput__;
         textRaw = new ArrayList<>();
         textMsg = new ArrayList<>();
@@ -990,7 +993,8 @@ public class ScreenTextDisp
             textMsg.get(t).ommit = !textMsg.get(t).ommit;
             int idx1 = textRawFindIdx1Message(displayOffset);
             int idx2 = textRawFindIdx2Message(displayOffset);
-            displayIdx(idx1, idx2);
+            //displayIdx(idx1, idx2);
+            displayIdx(0, idx2);
             supplyLine("___(((" + t + ")))___");
         }
     }
@@ -1223,6 +1227,8 @@ public class ScreenTextDisp
         {
             displayOffset = textRaw.size();
         }
+
+        int contextBeginIdx = ChatEngine.contextBeginIdx(textMsg, CF);
         
         for (int i = i_min; i < i_max; i++)
         {
@@ -1245,7 +1251,17 @@ public class ScreenTextDisp
                 if (item.MessageIdx >= 0)
                 {
                     ommit = textMsg.get(item.MessageIdx).ommit;
-                    ommitZero = (textMsg.get(item.MessageIdx).tokens <= 0) && (!ommit);
+                    if (!ommit)
+                    {
+                        ommitZero = (textMsg.get(item.MessageIdx).tokens <= 0);
+                        if (!ommitZero)
+                        {
+                            if (contextBeginIdx > item.MessageIdx)
+                            {
+                                ommitZero = true;
+                            }
+                        }
+                    }
                 }
                 if (ommit || ommitZero)
                 {
@@ -1767,7 +1783,7 @@ public class ScreenTextDisp
     
     public static String convMarkdownToPlain(String str)
     {
-        if (convMarkdownToPlain_ == null) convMarkdownToPlain_ = new ScreenTextDisp(null);
+        if (convMarkdownToPlain_ == null) convMarkdownToPlain_ = new ScreenTextDisp(null, null);
         convMarkdownToPlain_.clear(false);
         convMarkdownToPlain_.supplyLine(str);
         StringBuilder sb = new StringBuilder();

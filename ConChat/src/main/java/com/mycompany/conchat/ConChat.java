@@ -84,17 +84,22 @@ public class ConChat
     {
         String fav = ";" + CF.ParamGetS("Favorite") + ";";
 
+
         int ctxSummaryMsg = 0;
         int ctxSummaryTok = 0;
         int ctxSummaryMsgUsed = 0;
         int ctxSummaryTokUsed = 0;
         ArrayList<ScreenTextDispMessage> ctxMsg = ScreenTextDisp_[workContext].textMsg;
+        int contextBeginIdx = ChatEngine.contextBeginIdx(ctxMsg, CF);
         for (int i = 0; i < ctxMsg.size(); i++)
         {
             if ((!ctxMsg.get(i).ommit) && (ctxMsg.get(i).tokens > 0))
             {
-                ctxSummaryMsgUsed++;
-                ctxSummaryTokUsed += ctxMsg.get(i).tokens;
+                if (contextBeginIdx <= i)
+                {
+                    ctxSummaryMsgUsed++;
+                    ctxSummaryTokUsed += ctxMsg.get(i).tokens;
+                }
             }
             ctxSummaryMsg++;
             ctxSummaryTok += ctxMsg.get(i).tokens;
@@ -728,7 +733,7 @@ public class ConChat
         ScreenTextDisp_ = new ScreenTextDisp[workContextCount + 1];
         for (int i = 0; i < (workContextCount + 1); i++)
         {
-            ScreenTextDisp_[i] = new ScreenTextDisp(ConsoleInputOutput_);
+            ScreenTextDisp_[i] = new ScreenTextDisp(ConsoleInputOutput_, CF);
             ScreenTextDisp_[i].tableCellWidth = CF.ParamGetI("CellWidth");
             ScreenTextDisp_[i].clear(false);
             if (i < workContextCount)
