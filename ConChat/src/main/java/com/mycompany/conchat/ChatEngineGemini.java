@@ -55,7 +55,7 @@ public class ChatEngineGemini extends ChatEngine
     }
     
     @Override
-    public String chatTalk(ArrayList<ScreenTextDispMessage> ctx, String msg)
+    public String chatTalk(ArrayList<ScreenTextDispMessage> ctx, String msg, boolean testMode)
     {
         tokensI = 0;
         tokensO = 0;
@@ -81,32 +81,32 @@ public class ChatEngineGemini extends ChatEngine
         requestBody.put("contents", messages);
         
         JSONObject config = null;
-        if (CommonTools.isWithinRange(CF.ParamGetI("Temperature"), 0, 200))
+        if ((!testMode) && CommonTools.isWithinRange(CF.ParamGetI("Temperature"), 0, 200))
         {
             if (config == null) config = new JSONObject();
             config.put("temperature", ((double)CF.ParamGetI("Temperature")) / 100.0);
         }
-        if (CommonTools.isWithinRange(CF.ParamGetI("TopP"), 0, 100))
+        if ((!testMode) && CommonTools.isWithinRange(CF.ParamGetI("TopP"), 0, 100))
         {
             if (config == null) config = new JSONObject();
             config.put("topP", ((double)CF.ParamGetI("TopP")) / 100.0);
         }
-        if (CF.ParamGetI("TopK") >= 1)
+        if ((!testMode) && (CF.ParamGetI("TopK") >= 1))
         {
             if (config == null) config = new JSONObject();
             config.put("topK", CF.ParamGetI("TopK"));
         }
-        if (CommonTools.isWithinRange(CF.ParamGetI("PresencePenalty"), 0, 100))
+        if ((!testMode) && CommonTools.isWithinRange(CF.ParamGetI("PresencePenalty"), 0, 100))
         {
             if (config == null) config = new JSONObject();
             config.put("presencePenalty", ((double)CF.ParamGetI("PresencePenalty")) / 100.0);
         }
-        if (CommonTools.isWithinRange(CF.ParamGetI("FrequencyPenalty"), 0, 100))
+        if ((!testMode) && CommonTools.isWithinRange(CF.ParamGetI("FrequencyPenalty"), 0, 100))
         {
             if (config == null) config = new JSONObject();
             config.put("frequencyPenalty", ((double)CF.ParamGetI("FrequencyPenalty")) / 100.0);
         }
-        if (CF.ParamGetI("AnswerTokens") > 0)
+        if ((!testMode) && (CF.ParamGetI("AnswerTokens") > 0))
         {
             if (config == null) config = new JSONObject();
             config.put("maxOutputTokens", CF.ParamGetI("AnswerTokens"));
@@ -135,7 +135,7 @@ public class ChatEngineGemini extends ChatEngine
                 String answer = answer_.toString().trim();
                 tokensI = jsonResponse.getJSONObject("usageMetadata").getInt("promptTokenCount") - ctxTokens;
                 tokensO = jsonResponse.getJSONObject("usageMetadata").getInt("candidatesTokenCount");
-                tokenCount(ctxTokens, tokensI, tokensO);
+                tokenCount(ctxTokens, tokensI, tokensO, testMode);
                 return answer;
             }
             catch (Exception e)

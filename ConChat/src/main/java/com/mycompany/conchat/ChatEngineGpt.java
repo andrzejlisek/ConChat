@@ -57,7 +57,7 @@ public class ChatEngineGpt extends ChatEngine
     }
     
     @Override
-    public String chatTalk(ArrayList<ScreenTextDispMessage> ctx, String msg)
+    public String chatTalk(ArrayList<ScreenTextDispMessage> ctx, String msg, boolean testMode)
     {
         tokensI = 0;
         tokensO = 0;
@@ -66,19 +66,19 @@ public class ChatEngineGpt extends ChatEngine
 
         JSONObject requestBody = new JSONObject();
         requestBody.put("model", engineName);
-        if (CommonTools.isWithinRange(CF.ParamGetI("Temperature"), 0, 200))
+        if ((!testMode) && CommonTools.isWithinRange(CF.ParamGetI("Temperature"), 0, 200))
         {
             requestBody.put("temperature", ((double)CF.ParamGetI("Temperature")) / 100.0);       // 1.0   0.0 - 2.0
         }
-        if (CommonTools.isWithinRange(CF.ParamGetI("TopP"), 0, 100))
+        if ((!testMode) && CommonTools.isWithinRange(CF.ParamGetI("TopP"), 0, 100))
         {
             requestBody.put("top_p", ((double)CF.ParamGetI("TopP")) / 100.0);             // 1.0   0.0 - 1.0
         }
-        if (CommonTools.isWithinRange(CF.ParamGetI("FrequencyPenalty"), 0, 100))
+        if ((!testMode) && CommonTools.isWithinRange(CF.ParamGetI("FrequencyPenalty"), 0, 100))
         {
             requestBody.put("frequency_penalty", ((double)CF.ParamGetI("FrequencyPenalty")) / 100.0); // 0.0   0.0 - 2.0
         }
-        if (CommonTools.isWithinRange(CF.ParamGetI("PresencePenalty"), 0, 100))
+        if ((!testMode) && CommonTools.isWithinRange(CF.ParamGetI("PresencePenalty"), 0, 100))
         {
             requestBody.put("presence_penalty", ((double)CF.ParamGetI("PresencePenalty")) / 100.0);  // 0.0   0.0 - 2.0
         }
@@ -98,7 +98,7 @@ public class ChatEngineGpt extends ChatEngine
         }
         messages.put(new JSONObject().put("role", "user").put("content", msg));
         requestBody.put("messages", messages);
-        if (CF.ParamGetI("AnswerTokens") > 0)
+        if ((!testMode) && (CF.ParamGetI("AnswerTokens") > 0))
         {
             requestBody.put("max_tokens", CF.ParamGetI("AnswerTokens"));
         }
@@ -113,7 +113,7 @@ public class ChatEngineGpt extends ChatEngine
                 String answer = jsonResponse.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content").trim();
                 tokensI = jsonResponse.getJSONObject("usage").getInt("prompt_tokens") - ctxTokens;
                 tokensO = jsonResponse.getJSONObject("usage").getInt("completion_tokens");
-                tokenCount(ctxTokens, tokensI, tokensO);
+                tokenCount(ctxTokens, tokensI, tokensO, testMode);
                 return answer;
             }
             catch (Exception ee)

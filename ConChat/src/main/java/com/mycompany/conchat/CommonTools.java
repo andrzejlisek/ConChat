@@ -13,9 +13,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -118,15 +122,27 @@ public class CommonTools
         return stringIndent(pad - valStr.length(), ' ') + valStr;
     }
     
-    static String intLimited(int i)
+    static String intLimited(int val)
     {
-        if (i > 0)
+        if (val > 0)
         {
-            return "" + i;
+            return "" + val;
         }
         else
         {
             return "unlimited";
+        }
+    }
+    
+    static String intIsSpecified(int val, int valMin, int valMax)
+    {
+        if (isWithinRange(val, valMin, valMax))
+        {
+            return "" + val;
+        }
+        else
+        {
+            return "unspecified";
         }
     }
 
@@ -298,6 +314,37 @@ public class CommonTools
         {
 
         }
+        return temp;
+    }
+    
+    public static void fileCopy(String srcFileName, String dstFileName)
+    {
+        try
+        {
+            Files.copy((Path)Paths.get(srcFileName), (Path)Paths.get(dstFileName), StandardCopyOption.REPLACE_EXISTING);
+        }
+        catch (IOException __)
+        {
+
+        }
+    }
+    
+    public static ArrayList<String> fileList(String dir)
+    {
+        ArrayList<String> temp = new ArrayList<>();
+        File folder = new File(dir);
+        File[] listOfFiles = folder.listFiles();
+        if(listOfFiles != null)
+        {
+            for (int i = 0; i < listOfFiles.length; i++)
+            {
+                if (listOfFiles[i].isFile())
+                {
+                    temp.add(listOfFiles[i].getName());
+                }
+            }
+        }
+        Collections.sort(temp);
         return temp;
     }
     

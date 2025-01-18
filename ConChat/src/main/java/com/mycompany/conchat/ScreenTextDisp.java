@@ -588,29 +588,53 @@ public class ScreenTextDisp
                     }
                 }
                 
-                // Remove escape character
-                if (notInBlock && (MarkdownWindow[3] == '\\'))
+                if (notInBlock)
                 {
-                    int escapedChar = MarkdownWindow[4];
-                    if (CommonTools.isSpecialChar(escapedChar))
+                    // Remove escape character
+                    if (MarkdownWindow[3] == '\\')
                     {
-                        // Not remove ]\ and \[
-                        // Convert \[ and \] to $$
-                        if ((MarkdownWindow[4] != '[') && (MarkdownWindow[4] != ']'))
+                        int escapedChar = MarkdownWindow[4];
+                        if (CommonTools.isSpecialChar(escapedChar))
+                        {
+                            // Not remove ]\ and \[
+                            // Convert \[ and \] to $$
+                            if ((MarkdownWindow[4] != '[') && (MarkdownWindow[4] != ']'))
+                            {
+                                item.remove(idx0 - 2, 1);
+                                removedChars++;
+
+                                // Modify windowing string to avoid recursively remove
+                                if (escapedChar == '\\')
+                                {
+                                    windowingText = CommonTools.stringSetChar(windowingText, i + 4, 'X');
+                                }
+                            }
+                            else
+                            {
+                                windowingText = CommonTools.stringSetChar(windowingText, i + 3, '$');
+                                windowingText = CommonTools.stringSetChar(windowingText, i + 4, '$');
+                            }
+                        }
+                    }
+                    
+                    // Remove multiple spaces
+                    if ((MarkdownWindow[2] != ' ') && (MarkdownWindow[3] == ' ') && (MarkdownWindow[4] == ' '))
+                    {
+                        // Measue space sequence length
+                        int spaceCount = 0;
+                        int spaceMargin = 5;
+                        int spaceWindowOffset = 3;
+                        while ((windowingText.length() > (i + spaceWindowOffset + spaceCount + spaceMargin)) && (windowingText.charAt(i + spaceWindowOffset + spaceCount) == ' '))
+                        {
+                            spaceCount++;
+                        }
+
+                        // Remove additional spaces
+                        while (spaceCount > 1)
                         {
                             item.remove(idx0 - 2, 1);
                             removedChars++;
-
-                            // Modify windowing string to avoid recursively remove
-                            if (escapedChar == '\\')
-                            {
-                                windowingText = CommonTools.stringSetChar(windowingText, i + 4, 'X');
-                            }
-                        }
-                        else
-                        {
-                            windowingText = CommonTools.stringSetChar(windowingText, i + 3, '$');
-                            windowingText = CommonTools.stringSetChar(windowingText, i + 4, '$');
+                            spaceCount--;
                         }
                     }
                 }
@@ -969,6 +993,20 @@ public class ScreenTextDisp
             displayIdx(idx1, idx2);
             supplyLine("___(((" + t + ")))___");
         }
+    }
+    
+    /**
+     * Get current message length
+     * @return Messag length in tokens
+     */
+    public int getMessageLength()
+    {
+        int t = textRaw.get(displayOffset).MessageIdx;
+        if (t >= 0)
+        {
+            return textMsg.get(t).tokens;
+        }
+        return 0;
     }
     
     private void displayUseCmd(int cmd, int i)

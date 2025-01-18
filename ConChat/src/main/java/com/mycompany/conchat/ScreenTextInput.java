@@ -178,4 +178,16 @@ public class ScreenTextInput
         repaint(repaint1, repaint2);
         return true;
     }
+
+    public void textWrite(String txt)
+    {
+        for (int i = 0; i < txt.length(); i++)
+        {
+            int chr = txt.charAt(i);
+            if (chr >= 32)
+            {
+                keyEvent(chr);
+            }
+        }
+    }
 }

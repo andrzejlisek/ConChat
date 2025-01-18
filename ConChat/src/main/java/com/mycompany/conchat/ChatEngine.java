@@ -28,7 +28,6 @@ public class ChatEngine
     protected ConfigFile CFC;
     
     public boolean isActive = false;
-    private boolean talkTestMode = false;
     
     /**
      * List of available engines/models
@@ -41,7 +40,7 @@ public class ChatEngine
      * @param Q Question tokens
      * @param A Answer tokens
      */
-    void tokenCount(int H, int Q, int A)
+    void tokenCount(int H, int Q, int A, boolean talkTestMode)
     {
         if (talkTestMode)
         {
@@ -69,7 +68,7 @@ public class ChatEngine
     int contextBeginIdx(ArrayList<ScreenTextDispMessage> ctx)
     {
         int idx = 0;
-        int tokenLimit = CF.ParamGetI("AnswerTokens");
+        int tokenLimit = CF.ParamGetI("HistoryTokens");
         if (tokenLimit > 0)
         {
             idx = ctx.size();
@@ -222,9 +221,7 @@ public class ChatEngine
             String engineName_ = engineName;
             engineName = testEngineName;
             ArrayList<ScreenTextDispMessage> ctx = new ArrayList<>();
-            talkTestMode = true;
-            String testStr = chatTalk(ctx, "test");
-            talkTestMode = false;
+            String testStr = chatTalk(ctx, "test", true);
             if (testStr.startsWith("```ERROR"))
             {
                 engineName = engineName_;
@@ -249,7 +246,7 @@ public class ChatEngine
         return engineList;
     }
     
-    public String chatTalk(ArrayList<ScreenTextDispMessage> ctx, String msg)
+    public String chatTalk(ArrayList<ScreenTextDispMessage> ctx, String msg, boolean testMode)
     {
         if (engineName.isEmpty())
         {
@@ -259,5 +256,16 @@ public class ChatEngine
         {
             return "Invalid chat model `" + engineName + "`";
         }
+    }
+    
+    public static String contextFile(String fileName)
+    {
+        if (!fileName.startsWith("context")) return "";
+        if (!fileName.endsWith(".txt")) return "";
+        for (int i = 0; i < 10; i++)
+        {
+            if (fileName.equals("context" + i + ".txt")) return "";
+        }
+        return fileName.substring(7, fileName.length() - 4);
     }
 }

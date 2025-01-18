@@ -16,13 +16,18 @@ The configuration file **config\.txt** has the following options, the italic opt
 * **Favorite** \- Model favorite list separated with semicolon\.
 * ***Model*** \- Currently selected model name\.
 * ***FieldSize*** \- Minimum field size for input text in text lines\. The real current field size depends on current console resolution and can be increased by 1\.
-* ***Temperature*** \- Probability usage by chatbot from 0 to 200 called as **temperature**\. The 0 value causes almost deterministic chatbot working\.
-* ***TopP*** \- The **nucleus sampling** token probability threshold from 0 to 100\. The 0 value causes almost deterministic chatbot working\.
+* ***Temperature*** \- Probability usage by chatbot from **0** to **200** called as **temperature**\.
+  * The **0** value causes almost deterministic chatbot working\.
+  * Some value greater than **200** is allowed, but means, that temperature is not provided and the chatbot will use default temperature\.
+* ***TopP*** \- The **nucleus sampling** token probability threshold from **0** to **100**\.
+  * The **0** value causes almost deterministic chatbot working\.
+  * Some value greater than **100** is allowed, but means, that nucleus sampling is not provided and the chatbot will use default temperature\.
 * **TopK** \- The word set size limit for answer generation, the parameter is used for **Google Gemini** only\. The value can be:
   * **0** \- Parameter is not used\.
   * **From 1 to unlimited high number** \- Parameter is used with value\. The 1 value may cause chaotic answer generation while used high **Temperature** and high **TopP**\.
-* **PresencePenalty** \- Obstructing token repeat in generated answer based on token presence\. The value id from 0 to 100, while 0 means no obstruction \(no penalty\)\.
-* **FrequencyPenalty** \- Obstructing token repeat in generated answer based on token frequency\. The value id from 0 to 100, while 0 means no obstruction \(no penalty\)\.
+* **PresencePenalty** and **FrequencyPenalty** \- Obstructing token repeat in generated answer based on token presence and frequency respectively\. The value is from **0** to **100**\.
+  * The **0** means no obstruction \(no penalty\)\.
+  * Some value greater than **100** is allowed, but means, that this parameter is not provided and the chatbot will use default obstructions\.
 * ***HistoryTokens*** \- Maximum number of history tokens contained in last history messages \(questions and answers\) sent to chatbot everytime you writes the question\. The **0** value means unlimited history size, but chatbot engine may have own limit\.
 * ***AnswerTokens*** \- Maximum number of answer tokens\. Limited number may limit potential usage cost, but may cause incomplete answer\. The **0** values means unlimited answer size\.
 * ***WaitTimeout*** \- Waiting for answer timeout in seconds\.
@@ -74,6 +79,8 @@ In both states, everytime you can press these keys:
   * **"resize"** \- Repaint the interface after resize\. This command also clears all contextes and reloads them from files\.
   * **"copy"** \- Copy the current message \(in the middle of the screen\) to edit field\. Then, you can edit this question before send\.
   * **"counterreset"** \- Reset the tonen counter for the currently selected model\.
+  * **"archive"** \- Archive the current context to file\. The physical file will by named by **contextXYZ\.txt**, where XYZ is current date/time stamp written by 14 digits\.
+  * **"archdelete"** \- Delete last created or restored archive, which is highlighted\.
   * **Other text** \- Depends on state and text, described in below subchapters\. 
 * **Up Arrow**, **Down Arrow**, **Page Up**, **Page Down**, **Home**, **End** \- Scroll the text in answer screen\.
 * **Left Arrow**, **Right Arrow** \- Move cursor across input text\.
@@ -88,6 +95,8 @@ The answer can contain unformatted text blocks according the **Mardown** code\. 
 The conversation are stored in the files named as **context0\.txt**, **context1\.txt** and so on, these files are **Markdown** files and can be viewed in ordinary Markdown viewer/interpreter\. The **clear** command clears the screen and removes the file\. **ConChat** has simplified and limited **Markdown** support described in the **Readme\_markdown\.md** file and seldom answers may be displayed incorrectly\.
 
 The chatbot actually works as stateless machine, so everytime, if you send further questions, the whole conversation history \(excluding the messages with 0 tokens\) is sent to server\. You can ommit any message from history by move into the middle of the screen and press the **Tab** key\. Ommited messages are indicated by strikethrough\. You can turn ommision off by pressing the **Tab** key one more within the same message\.
+
+In order to check the message size in tokens, you can press the **Insert** or **F12** key\. The number of token will be written into the input text field\.
 
 Everytime, if you send the question, the chat server sends the number of tokens for question and answer\. These numbers are stored in the context and erroneous messages including questions without answer, are not sent to server\. These messages are indicated by strikethrough mark in the first and last text column and will be permanently ommited\.
 
@@ -105,6 +114,7 @@ In this stare, there are displayed following information:
 * Word commands, which works in both states\.
 * The configuration parameter and one\-letter commands for change this parameters\.
 * List of favorite models, which are available and included in **Favorite** parameter in **config\.txt** file\. These models are numbered for ease change\.
+* List of archive context files treated as further items on favorite model list\.
 * List of available models with token counter\. These models are in **models\.txt** file\. The counter consists of three numbers:
   * History token counter\.
   * Question token counter\.
@@ -112,13 +122,13 @@ In this stare, there are displayed following information:
 
 The one\-letter commands consists of single letter \(case insensitive\) and one number\. For instance, in order to set the temperature to **100**, input **t100** and press **Enter**\. In order to set waiting timeout to one minute \(60 seconds\), input **w60** and press Enter\. The value will be automatically updated\.
 
-There are two ways to change the current model:
+There are two ways to change the current model or restore archive context:
 
 
-* Input the model number on favorite list and press **Enter**\.
-* Input the model name and press **Enter**\.
+* Input the item number on favorite list and press **Enter**\.
+* Input the model name or archive context name and press **Enter**\.
 
-The currently selected model is highlighted\.
+The currently selected model is highlighted\. The archive context will be highlighted after restored\.
 
 # Available model list
 
@@ -139,6 +149,18 @@ There are two scenarios depending on the **TestModel** parameter in **config\.tx
 
 * **TestModel** is blank \- Every model from the downloaded list will be stored in **models\.txt** and available to select in **Configuration state** even, if the model is not purposed to work with chatbot\.
 * **TestModel** is not blank \- For each moder, there will be send the question provided as **TextModel** parameter\. The model will be considered as valid if the chatbot server give answet for questions\. The answer will not analyzed\. If there is error answer, the model will not inslude and it will be sured, that the list contains usable models only instead of all theoretically available models\. The procedure may take several minutes and consumed tokens will not encountered in token counters\.
+
+# Archive context files
+
+In the favorite model list, there is list of archive context file\. The item name consists of date and time presented as 14 digits of date \(yyyymmdd\) and time\(hhmmss\)\.
+
+If you want to restore the archive to currently selected context, write the item name or item number and press Enter\. The selected context will be highlighted\.
+
+Directly after archive \(command **archive** in operation state\), the last created archive will be highlighted\.
+
+The highlighted archive context will be deleted by **archdelete** command\. If not any context is highlighted, the **archdelete** command will do nothing\.
+
+The archive context can be restore to another context number, so the archive and restore can be also used to copy one context to another context\.
 
 
 
