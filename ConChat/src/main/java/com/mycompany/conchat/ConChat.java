@@ -104,10 +104,8 @@ public class ConChat
             ctxSummaryMsg++;
             ctxSummaryTok += ctxMsg.get(i).tokens;
         }
-        String ctxSummaryMsgInfo = "" + ctxSummaryMsg;
-        /*if (ctxSummaryMsgUsed != ctxSummaryMsg)*/ ctxSummaryMsgInfo = (ctxSummaryMsgUsed + "/" + ctxSummaryMsg);
-        String ctxSummaryTokInfo = "" + ctxSummaryTok;
-        /*if (ctxSummaryTokUsed != ctxSummaryTok)*/ ctxSummaryTokInfo = (ctxSummaryTokUsed + "/" + ctxSummaryTok);
+        String ctxSummaryMsgInfo = (ctxSummaryMsgUsed + "/" + ctxSummaryMsg);
+        String ctxSummaryTokInfo = (ctxSummaryTokUsed + "/" + ctxSummaryTok);
 
         String engineName = CF.ParamGetS("Model");
         
