@@ -909,6 +909,8 @@ public class ConChat
                                 int tokensI = 0;
                                 int tokensO = 0;
                                 S = ScreenTextDisp.convSingleToMulti(S_);
+                                S = ScreenTextDisp.convPlainToMarkdown(S);
+                                S = ScreenTextDisp.convMarkdownToPlain(S);
                                 
                                 ScreenTextDisp_[ctx].supplyPointSave();
                                 ScreenTextDisp_[ctx].supplyLine("");

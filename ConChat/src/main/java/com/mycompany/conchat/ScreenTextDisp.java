@@ -1784,6 +1784,7 @@ public class ScreenTextDisp
     public static String convMarkdownToPlain(String str)
     {
         if (convMarkdownToPlain_ == null) convMarkdownToPlain_ = new ScreenTextDisp(null, null);
+        convMarkdownToPlain_.textWidth = str.length() + 10;
         convMarkdownToPlain_.clear(false);
         convMarkdownToPlain_.supplyLine(str);
         StringBuilder sb = new StringBuilder();
