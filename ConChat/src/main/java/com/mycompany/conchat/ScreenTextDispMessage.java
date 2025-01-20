@@ -14,15 +14,17 @@ import java.util.ArrayList;
 public class ScreenTextDispMessage
 {
     public int tokens;
+    public String model;
     public String message;
     public boolean isAnswer;
     public boolean ommit;
     
-    public ScreenTextDispMessage(boolean isAnswer_, String message_, int tokens_)
+    public ScreenTextDispMessage(boolean isAnswer_, String message_, int tokens_, String model_)
     {
         isAnswer = isAnswer_;
         message = message_;
         tokens = tokens_;
+        model = model_;
         ommit = false;
     }
     
@@ -46,7 +48,7 @@ public class ScreenTextDispMessage
         return sb.toString();
     }
     
-    public static ScreenTextDispMessage supplyArrayListToStr(boolean isAnswer_, ArrayList<String> msgBuf, int tokens_)
+    public static ScreenTextDispMessage supplyArrayListToStr(boolean isAnswer_, ArrayList<String> msgBuf, int tokens_, String model_)
     {
         if (tokens_ < 0)
         {
@@ -75,7 +77,7 @@ public class ScreenTextDispMessage
         if (!isAnswer_) sb_s = ScreenTextDisp.convMarkdownToPlain(sb_s);
         if (sb_s.length() > 0)
         {
-            return new ScreenTextDispMessage(isAnswer_, sb_s, tokens_);
+            return new ScreenTextDispMessage(isAnswer_, sb_s, tokens_, model_);
         }
         
         return null;

@@ -24,6 +24,7 @@ public class ChatEngine
     protected String engineName = "";
     protected int tokensI;
     protected int tokensO;
+    protected String tokensE = "";
     protected ConfigFile CF;
     protected ConfigFile CFC;
     

@@ -64,6 +64,8 @@ public class CommonTools
      */
     static char splitter = 0x2550;
     
+    static char splitterInfo = ' ';
+    
     static String applDir = "";
     static String logFileName = "http.txt";
     static String configFileName = "config.txt";

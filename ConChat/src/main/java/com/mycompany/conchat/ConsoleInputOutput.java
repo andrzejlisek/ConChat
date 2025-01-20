@@ -118,6 +118,7 @@ public class ConsoleInputOutput
                             break;
                         case 27:
                             keySeq = "[~]";
+                            ringBell();
                             work = false;
                             break;
                     }

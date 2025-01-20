@@ -852,11 +852,16 @@ public class ConChat
                     case (ConsoleInputOutput.keySpecialNum + 11):
                     case (ConsoleInputOutput.keySpecialNum + 112):
                         {
-                            int l = ScreenTextDisp_[ctx].getMessageLength();
-                            if (l > 0)
+                            String e = "";
+                            if (ChatEngineGpt_.isActive)
                             {
-                                ScreenTextInput_.textWrite(l + "");
+                                e = ChatEngineGpt_.engineName;
                             }
+                            if (ChatEngineGemini_.isActive)
+                            {
+                                e = ChatEngineGemini_.engineName;
+                            }
+                            ScreenTextInput_.textWrite(ScreenTextDisp_[ctx].getMessageInfo(e));
                         }
                         break;
                     default:
@@ -908,6 +913,7 @@ public class ConChat
                             {
                                 int tokensI = 0;
                                 int tokensO = 0;
+                                String tokensE = "";
                                 S = ScreenTextDisp.convSingleToMulti(S_);
                                 S = ScreenTextDisp.convPlainToMarkdown(S);
                                 S = ScreenTextDisp.convMarkdownToPlain(S);
@@ -928,12 +934,14 @@ public class ConChat
                                     SS = ChatEngineGpt_.chatTalk(ScreenTextDisp_[ctx].textMsg, S, false);
                                     tokensI = ChatEngineGpt_.tokensI;
                                     tokensO = ChatEngineGpt_.tokensO;
+                                    tokensE = ChatEngineGpt_.tokensE;
                                 }
                                 if (ChatEngineGemini_.isActive)
                                 {
                                     SS = ChatEngineGemini_.chatTalk(ScreenTextDisp_[ctx].textMsg, S, false);
                                     tokensI = ChatEngineGemini_.tokensI;
                                     tokensO = ChatEngineGemini_.tokensO;
+                                    tokensE = ChatEngineGemini_.tokensE;
                                 }
                                 waitStop();
 
@@ -942,15 +950,15 @@ public class ConChat
                                 ScreenTextDisp_[ctx].messageIdxCounter = ScreenTextDisp_[ctx].textMsg.size() - 1;
                                 ScreenTextDisp_[ctx].supplyLine("");
                                 ScreenTextDisp_[ctx].messageIdxCounter = ScreenTextDisp_[ctx].textMsg.size();
-                                ScreenTextDisp_[ctx].textMsg.add(new ScreenTextDispMessage(false, S, tokensI));
-                                ScreenTextDisp_[ctx].supplyLine("___<<<" + tokensI + "<<<___");
+                                ScreenTextDisp_[ctx].textMsg.add(new ScreenTextDispMessage(false, S, tokensI, tokensE));
+                                ScreenTextDisp_[ctx].supplyLine("___<<<" + tokensI + "" + CommonTools.splitterInfo + tokensE + "<<<___");
                                 ScreenTextDisp_[ctx].supplyLine("");
                                 ScreenTextDisp_[ctx].supplyLine(ScreenTextDisp.convPlainToMarkdown(S));
 
                                 ScreenTextDisp_[ctx].supplyLine("");
                                 ScreenTextDisp_[ctx].messageIdxCounter = ScreenTextDisp_[ctx].textMsg.size();
-                                ScreenTextDisp_[ctx].textMsg.add(new ScreenTextDispMessage(true, SS, tokensO));
-                                ScreenTextDisp_[ctx].supplyLine("___>>>" + tokensO + ">>>___");
+                                ScreenTextDisp_[ctx].textMsg.add(new ScreenTextDispMessage(true, SS, tokensO, tokensE));
+                                ScreenTextDisp_[ctx].supplyLine("___>>>" + tokensO + "" + CommonTools.splitterInfo + tokensE + ">>>___");
                                 ScreenTextDisp_[ctx].supplyLine("");
                                 ScreenTextDisp_[ctx].supplyLine(SS);
                                 ScreenTextDisp_[ctx].displayAll();

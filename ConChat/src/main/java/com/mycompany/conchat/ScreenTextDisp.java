@@ -1000,17 +1000,40 @@ public class ScreenTextDisp
     }
     
     /**
-     * Get current message length
-     * @return Messag length in tokens
+     * Get current message info
+     * @return Message info
      */
-    public int getMessageLength()
+    public String getMessageInfo(String engName)
     {
+        /*for (int i = 0; i < textMsg.size(); i++)
+        {
+            CommonTools.debugln("i=" + i);
+            CommonTools.debugln("t=" + textMsg.get(i).tokens);
+            CommonTools.debugln("m=" + textMsg.get(i).model);
+        }*/
         int t = textRaw.get(displayOffset).MessageIdx;
         if (t >= 0)
         {
-            return textMsg.get(t).tokens;
+            if ((!textMsg.get(t).model.isBlank()) && (!textMsg.get(t).model.trim().equals(engName)))
+            {
+                if (textMsg.get(t).tokens > 0)
+                {
+                    return textMsg.get(t).tokens + "" + CommonTools.splitterInfo + "" + textMsg.get(t).model.trim();
+                }
+                else
+                {
+                    return textMsg.get(t).model.trim();
+                }
+            }
+            else
+            {
+                if (textMsg.get(t).tokens > 0)
+                {
+                    return textMsg.get(t).tokens + "";
+                }
+            }
         }
-        return 0;
+        return "";
     }
     
     private void displayUseCmd(int cmd, int i)
@@ -1432,6 +1455,7 @@ public class ScreenTextDisp
         boolean lastMsgOmmit = false;
         ArrayList<String> msgBuf = new ArrayList<>();
         int msgTokens = -1;
+        String msgTokensModel = "";
         boolean msgAnswer = false;
 
         ArrayList<String> fileRawData = CommonTools.fileLoadText(fileName, true);
@@ -1461,7 +1485,7 @@ public class ScreenTextDisp
                     {
                         messageIdxCounter = 0;
 
-                        ScreenTextDispMessage item = ScreenTextDispMessage.supplyArrayListToStr(msgAnswer, msgBuf, msgTokens);
+                        ScreenTextDispMessage item = ScreenTextDispMessage.supplyArrayListToStr(msgAnswer, msgBuf, msgTokens, msgTokensModel);
                         if (item != null)
                         {
                             item.ommit = lastMsgOmmit;
@@ -1471,8 +1495,23 @@ public class ScreenTextDisp
                         }
 
                         msgBuf.clear();
-                        int msgTokens0 = CommonTools.strToInt(S.substring(6, S.length() - 6), -1);
-                        if (msgTokens0 >= 0) msgTokens = msgTokens0;
+                        int strSplitter = S.substring(6, S.length() - 6).indexOf(CommonTools.splitterInfo);
+                        int msgTokens0 = -1;
+                        String msgTokensModel0 = "";
+                        if (strSplitter >= 0)
+                        {
+                            msgTokensModel0 = S.substring(strSplitter + 7, S.length() - 6);
+                            msgTokens0 = CommonTools.strToInt(S.substring(6, strSplitter + 6), -1);
+                        }
+                        else
+                        {
+                            msgTokens0 = CommonTools.strToInt(S.substring(6, S.length() - 6), -1);
+                        }
+                        if (msgTokens0 >= 0)
+                        {
+                            msgTokens = msgTokens0;
+                            msgTokensModel = msgTokensModel0;
+                        }
 
                         if (S.startsWith("___<<<") && S.endsWith("<<<___")) { msgAnswer = false; }
                         if (S.startsWith("___>>>") && S.endsWith(">>>___")) { msgAnswer = true; }
@@ -1492,7 +1531,7 @@ public class ScreenTextDisp
 
         }
         {
-            ScreenTextDispMessage item = ScreenTextDispMessage.supplyArrayListToStr(msgAnswer, msgBuf, msgTokens);
+            ScreenTextDispMessage item = ScreenTextDispMessage.supplyArrayListToStr(msgAnswer, msgBuf, msgTokens, msgTokensModel);
             if (item != null)
             {
                 item.ommit = lastMsgOmmit;

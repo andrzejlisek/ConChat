@@ -98,7 +98,13 @@ The chatbot actually works as stateless machine, so everytime, if you send furth
 
 The messages, which are ommited due to **0** tokens length or exceeding history tokens limit are indicated by strikethrough line at the screen edges\.
 
-In order to check the message size in tokens, you can press the **Insert** or **F12** key\. The number of token will be written into the input text field\.
+In order to check the message size in tokens, you can press the **Insert** or **F12** key\. The message information will be written into the input text field:
+
+
+* Message length in tokens if the length is saved\.
+* The model name if the model differs than the current model, the model name will also be written\.
+
+The information will remind, which model you was used within the current conversations\. If toy get the lessage length only, the current model is the same as used in the talk\.
 
 Everytime, if you send the question, the chat server sends the number of tokens for question and answer\. These numbers are stored in the context and erroneous messages including questions without answer, are not sent to server\. These messages are indicated by strikethrough mark in the first and last text column and will be permanently ommited\.
 

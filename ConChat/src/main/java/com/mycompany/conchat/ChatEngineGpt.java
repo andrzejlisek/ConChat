@@ -61,6 +61,7 @@ public class ChatEngineGpt extends ChatEngine
     {
         tokensI = 0;
         tokensO = 0;
+        tokensE = engineName;
         int ctxTokens = 0;
         String apiEndpoint = "https://api.openai.com/v1/chat/completions";
 

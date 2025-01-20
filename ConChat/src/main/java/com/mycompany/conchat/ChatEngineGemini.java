@@ -59,6 +59,7 @@ public class ChatEngineGemini extends ChatEngine
     {
         tokensI = 0;
         tokensO = 0;
+        tokensE = engineName;
         int ctxTokens = 0;
         JSONObject requestBody = new JSONObject();
         JSONArray messages = new JSONArray();
