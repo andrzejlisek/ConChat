@@ -30,6 +30,31 @@ If text line begins from one of above, interpreter detects and remembers the tex
 
 Then, the text line \(excluding the punctation character if there is list item\) is parsed using the window and current state\.
 
+## Asterisk and underscore
+
+The two characters switches the bond and italic state as following:
+
+
+* **Single character** \- Switch the **italic state** to opposite\.
+* **Double character** \- Switch the **bold state** to opposite\.
+* **Triple character** \- Switch the **bold state** and **italic state** to opposite\. Works only if both states are disabled or both states are enabled\.
+
+The characters switches the state or will be printed as are debending on previous and next character\. The asterisk and underscore switches the state under the following conditions:
+
+
+* Enable state:
+  * Previous character is space or special, the next character is letter or special\.
+  * Previous character is letter, the next character is letter, works for asterisk only\.
+  * Code state is disabled\.
+  * Not within the block state\.
+* Disable state:
+  * Previous character is letter or special, the next character is space or special\.
+  * Previous character is letter, the next character is letter, works for asterisk only\.
+  * Code state is disabled\.
+  * Not within the block state\.
+
+The special character is every character other than space, letter and digit\.
+
 ## Single character
 
 The single character can be detected by read last three characters\. To interprets the character as formatting character, the character can not be repeated\.
@@ -37,19 +62,7 @@ The single character can be detected by read last three characters\. To interpre
 The following single characters occurence are supported:
 
 
-* **Underscore** or **asterisk** \- Switch the inline italic attribute with these rules:
-  * Enable italic state, when meets all conditions:
-    * Italic state is disabled\.
-    * Next character is not special character\.
-    * Next character is not space character\.
-    * Not in block state\.
-    * Not in inline code state\.
-  * Disable italic state, when meets all conditions:
-    * Italic state is enabled\.
-    * Previous character is not special character\.
-    * Previous character is not space character\.
-    * Not in block state\.
-    * Not in inline code state\.
+* **Underscore** or **asterisk** \- Switch the inline italic state with rules descripbed in **Asterisk and underscore** subchapter\.
 * **Grave accent** \- Switch the inline code state when not in block code state\. The inline code state can will be disable even, if finishing **grave accent** is preceded by **backslach** character\.
 * **Dollar sign** \- Not parsed in ConChat, this characters switches the equation state\. The support is disable to avoid confusion with the printed prices in dollars\.
 
@@ -60,15 +73,7 @@ The double character can be detected by read last four characters\.
 The following character sequences are supported:
 
 
-* **Double underscore** or **double asterisk** \- Switch the inline block attribute with these rules:
-  * Enable bold state, when meets all conditions:
-    * Bold state is disabled\.
-    * Not in block state\.
-    * Not in inline code state\.
-  * Disable bold state, when meets all conditions:
-    * Bold state is enabled\.
-    * Not in block state\.
-    * Not in inline code state\.
+* **Double underscore** or **double asterisk** \- Switch the inline block state with descripbed in **Asterisk and underscore** subchapter\.
 * **Double dollar** \- Switch the equation block state\. The ConChat does not support the LaTexParse, but block equations are displayed as unformatted block text\. The line containing double dollar belongs to the block\.
 * **Backslash followed by opening square bracked** \- Works as double dollar\.
 * **Backslash followed by closing square bracked** \- Works as double dollar\.
@@ -79,21 +84,7 @@ The following character sequences are supported:
 Some triple character sequence can also be interpreted as formatting sequences:
 
 
-* **Triple underscore** or **triple asterisk** \- Switch the inline bold state and inline italic state simultaneously upon the same rules as for single or double asterisk/underline\.
-  * Enable bold state and italic state, when meets all conditions:
-    * Bold state is disabled\.
-    * Italic state is disabled\.
-    * Next character is not special character\.
-    * Next character is not space character\.
-    * Not in block state\.
-    * Not in inline code state\.
-  * Disable bold state and italic state, when meets all conditions:
-    * Bold state is enabled\.
-    * Italic state is enabled\.
-    * Previous character is not special character\.
-    * Previous character is not space character\.
-    * Not in block state\.
-    * Not in inline code state\.
+* **Triple underscore** or **triple asterisk** \- Switch the inline bold state and inline italic state simultaneously with rules descripbed in **Asterisk and underscore** subchapter\.
 * **Triple grave accent** or **triple tilde** \- Switch the block code state\. The line containing triple grave accent or triple dollar belongs to the block\.
 
 ## Line analysis after windowing

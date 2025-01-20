@@ -361,11 +361,24 @@ public class ScreenTextDisp
                 // Single character
                 if ((MarkdownWindow[2] != '\\'))
                 {
-                    if (notInBlock && (MarkdownWindow[2] != '_') && (MarkdownWindow[3] == '_') && (MarkdownWindow[4] != '_'))
+                    if (notInBlock && (((MarkdownWindow[2] != '_') && (MarkdownWindow[3] == '_') && (MarkdownWindow[4] != '_')) || ((MarkdownWindow[2] != '*') && (MarkdownWindow[3] == '*') && (MarkdownWindow[4] != '*'))))
                     {
+                        boolean isAllowed = false;
                         if (MarkdownItalic)
                         {
-                            if ((!CommonTools.isSpaceOrSpecialChar(MarkdownWindow[2])) && (CommonTools.isSpaceOrSpecialChar(MarkdownWindow[4])))
+                            if ((CommonTools.isChar(MarkdownWindow[2], false, true, true)) && (CommonTools.isChar(MarkdownWindow[4], true, false, true)))
+                            {
+                                isAllowed = true;
+                            }
+                            else
+                            {
+                                if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[2], false, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, false)))
+                                {
+                                    isAllowed = true;
+                                }
+                            }
+                            
+                            if (isAllowed)
                             {
                                 MarkdownItalic = !MarkdownItalic;
                                 item.remove(idx0 - 2, 1);
@@ -375,30 +388,19 @@ public class ScreenTextDisp
                         }
                         else
                         {
-                            if ((CommonTools.isSpaceOrSpecialChar(MarkdownWindow[2])) && (!CommonTools.isSpaceOrSpecialChar(MarkdownWindow[4])))
+                            if ((CommonTools.isChar(MarkdownWindow[2], true, false, true)) && (CommonTools.isChar(MarkdownWindow[4], false, true, true)))
                             {
-                                MarkdownItalic = !MarkdownItalic;
-                                item.remove(idx0 - 2, 1);
-                                item.setCommand(idx0 - 2, MarkdownItalic ? 21 : 20);
-                                removedChars++;
+                                isAllowed = true;
                             }
-                        }
-                    }
-                    if (notInBlock && (MarkdownWindow[2] != '*') && (MarkdownWindow[3] == '*') && (MarkdownWindow[4] != '*'))
-                    {
-                        if (MarkdownItalic)
-                        {
-                            if ((!CommonTools.isSpaceOrSpecialChar(MarkdownWindow[2])) && (CommonTools.isSpaceOrSpecialChar(MarkdownWindow[4])))
+                            else
                             {
-                                MarkdownItalic = !MarkdownItalic;
-                                item.remove(idx0 - 2, 1);
-                                item.setCommand(idx0 - 2, MarkdownItalic ? 21 : 20);
-                                removedChars++;
+                                if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[2], false, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, false)))
+                                {
+                                    isAllowed = true;
+                                }
                             }
-                        }
-                        else
-                        {
-                            if ((CommonTools.isSpaceOrSpecialChar(MarkdownWindow[2])) && (!CommonTools.isSpaceOrSpecialChar(MarkdownWindow[4])))
+                            
+                            if (isAllowed)
                             {
                                 MarkdownItalic = !MarkdownItalic;
                                 item.remove(idx0 - 2, 1);
@@ -433,11 +435,24 @@ public class ScreenTextDisp
                 // Double character
                 if (MarkdownWindow[1] != '\\')
                 {
-                    if (notInBlock && (MarkdownWindow[1] != '_') && (MarkdownWindow[2] == '_') && (MarkdownWindow[3] == '_') && (MarkdownWindow[4] != '_'))
+                    if (notInBlock && (((MarkdownWindow[1] != '_') && (MarkdownWindow[2] == '_') && (MarkdownWindow[3] == '_') && (MarkdownWindow[4] != '_')) || ((MarkdownWindow[1] != '*') && (MarkdownWindow[2] == '*') && (MarkdownWindow[3] == '*') && (MarkdownWindow[4] != '*'))))
                     {
+                        boolean isAllowed = false;
                         if (MarkdownBold)
                         {
-                            //if ((!CommonTools.isSpaceOrSpecialChar(MarkdownWindow[1])) && (CommonTools.isSpaceOrSpecialChar(MarkdownWindow[4])))
+                            if ((CommonTools.isChar(MarkdownWindow[1], false, true, true)) && (CommonTools.isChar(MarkdownWindow[4], true, false, true)))
+                            {
+                                isAllowed = true;
+                            }
+                            else
+                            {
+                                if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[1], false, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, false)))
+                                {
+                                    isAllowed = true;
+                                }
+                            }
+
+                            if (isAllowed)
                             {
                                 MarkdownBold = !MarkdownBold;
                                 item.remove(idx0 - 3, 2);
@@ -448,32 +463,19 @@ public class ScreenTextDisp
                         }
                         else
                         {
-                            //if ((CommonTools.isSpaceOrSpecialChar(MarkdownWindow[1])) && (!CommonTools.isSpaceOrSpecialChar(MarkdownWindow[4])))
+                            if ((CommonTools.isChar(MarkdownWindow[1], true, false, true)) && (CommonTools.isChar(MarkdownWindow[4], false, true, true)))
                             {
-                                MarkdownBold = !MarkdownBold;
-                                item.remove(idx0 - 3, 2);
-                                item.setCommand(idx0 - 3, MarkdownBold ? 11 : 10);
-                                removedChars++;
-                                removedChars++;
+                                isAllowed = true;
                             }
-                        }
-                    }
-                    if (notInBlock && (MarkdownWindow[1] != '*') && (MarkdownWindow[2] == '*') && (MarkdownWindow[3] == '*') && (MarkdownWindow[4] != '*'))
-                    {
-                        if (MarkdownBold)
-                        {
-                            //if ((!CommonTools.isSpaceOrSpecialChar(MarkdownWindow[1])) && (CommonTools.isSpaceOrSpecialChar(MarkdownWindow[4])))
+                            else
                             {
-                                MarkdownBold = !MarkdownBold;
-                                item.remove(idx0 - 3, 2);
-                                item.setCommand(idx0 - 3, MarkdownBold ? 11 : 10);
-                                removedChars++;
-                                removedChars++;
+                                if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[1], false, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, false)))
+                                {
+                                    isAllowed = true;
+                                }
                             }
-                        }
-                        else
-                        {
-                            //if ((CommonTools.isSpaceOrSpecialChar(MarkdownWindow[1])) && (!CommonTools.isSpaceOrSpecialChar(MarkdownWindow[4])))
+
+                            if (isAllowed)
                             {
                                 MarkdownBold = !MarkdownBold;
                                 item.remove(idx0 - 3, 2);
@@ -518,11 +520,24 @@ public class ScreenTextDisp
                 // Triple character
                 if (MarkdownWindow[0] != '\\')
                 {
-                    if (notInBlock && (MarkdownWindow[0] != '*') && (MarkdownWindow[1] == '*') && (MarkdownWindow[2] == '*') && (MarkdownWindow[3] == '*') && (MarkdownWindow[4] != '*'))
+                    if (notInBlock && (((MarkdownWindow[0] != '*') && (MarkdownWindow[1] == '*') && (MarkdownWindow[2] == '*') && (MarkdownWindow[3] == '*') && (MarkdownWindow[4] != '*')) || ((MarkdownWindow[0] != '_') && (MarkdownWindow[1] == '_') && (MarkdownWindow[2] == '_') && (MarkdownWindow[3] == '_') && (MarkdownWindow[4] != '_'))))
                     {
+                        boolean isAllowed = false;
                         if (MarkdownBold && MarkdownItalic)
                         {
-                            if ((!CommonTools.isSpaceOrSpecialChar(MarkdownWindow[0])) && (CommonTools.isSpaceOrSpecialChar(MarkdownWindow[4])))
+                            if ((CommonTools.isChar(MarkdownWindow[0], false, true, true)) && (CommonTools.isChar(MarkdownWindow[4], true, false, true)))
+                            {
+                                isAllowed = true;
+                            }
+                            else
+                            {
+                                if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[0], false, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, false)))
+                                {
+                                    isAllowed = true;
+                                }
+                            }
+
+                            if (isAllowed)
                             {
                                 MarkdownBold = !MarkdownBold;
                                 MarkdownItalic = !MarkdownItalic;
@@ -532,36 +547,21 @@ public class ScreenTextDisp
                                 removedChars += 3;
                             }
                         }
-                        else
+                        else if ((!MarkdownBold) && (!MarkdownItalic))
                         {
-                            if ((CommonTools.isSpaceOrSpecialChar(MarkdownWindow[0])) && (!CommonTools.isSpaceOrSpecialChar(MarkdownWindow[4])))
+                            if ((CommonTools.isChar(MarkdownWindow[0], true, false, true)) && (CommonTools.isChar(MarkdownWindow[4], false, true, true)))
                             {
-                                MarkdownBold = !MarkdownBold;
-                                MarkdownItalic = !MarkdownItalic;
-                                item.remove(idx0 - 4, 3);
-                                item.setCommand(idx0 - 4, MarkdownBold ? 11 : 10);
-                                item.setCommand(idx0 - 4, MarkdownItalic ? 21 : 20);
-                                removedChars += 3;
+                                isAllowed = true;
                             }
-                        }
-                    }
-                    if (notInBlock && (MarkdownWindow[0] != '_') && (MarkdownWindow[1] == '_') && (MarkdownWindow[2] == '_') && (MarkdownWindow[3] == '_') && (MarkdownWindow[4] != '_'))
-                    {
-                        if (MarkdownBold && MarkdownItalic)
-                        {
-                            if ((!CommonTools.isSpaceOrSpecialChar(MarkdownWindow[0])) && (CommonTools.isSpaceOrSpecialChar(MarkdownWindow[4])))
+                            else
                             {
-                                MarkdownBold = !MarkdownBold;
-                                MarkdownItalic = !MarkdownItalic;
-                                item.remove(idx0 - 4, 3);
-                                item.setCommand(idx0 - 4, MarkdownBold ? 11 : 10);
-                                item.setCommand(idx0 - 4, MarkdownItalic ? 21 : 20);
-                                removedChars += 3;
+                                if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[0], false, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, false)))
+                                {
+                                    isAllowed = true;
+                                }
                             }
-                        }
-                        else
-                        {
-                            if ((CommonTools.isSpaceOrSpecialChar(MarkdownWindow[0])) && (!CommonTools.isSpaceOrSpecialChar(MarkdownWindow[4])))
+
+                            if (isAllowed)
                             {
                                 MarkdownBold = !MarkdownBold;
                                 MarkdownItalic = !MarkdownItalic;
@@ -596,7 +596,7 @@ public class ScreenTextDisp
                     if (MarkdownWindow[3] == '\\')
                     {
                         int escapedChar = MarkdownWindow[4];
-                        if (CommonTools.isSpecialChar(escapedChar))
+                        if (CommonTools.isChar(escapedChar, false, false, true))
                         {
                             // Not remove ]\ and \[
                             // Convert \[ and \] to $$
@@ -1812,7 +1812,7 @@ public class ScreenTextDisp
         for (int i = 0; i < str.length(); i++)
         {
             char chr = str.charAt(i);
-            if (CommonTools.isSpecialChar(chr)) sb.append("\\");
+            if (CommonTools.isChar(chr, false, false, true)) sb.append("\\");
             sb.append(chr);
         }
         return sb.toString();

@@ -444,29 +444,44 @@ public class CommonTools
         }
     }
     
-    public static boolean isSpecialChar(int chr)
+    public static boolean isChar(int chr, Boolean chrSpace, Boolean chrAlphaNum, Boolean chrSpecial)
     {
-        if ((chr >= 0x21) && (chr <= 0x2F)) return true;
-        if ((chr >= 0x3A) && (chr <= 0x40)) return true;
-        if ((chr >= 0x5B) && (chr <= 0x60)) return true;
-        if ((chr >= 0x7B) && (chr <= 0x7E)) return true;
-        return false;
-    }
-
-    public static boolean isSpaceChar(int chr)
-    {
-        switch (chr)
+        if (chrSpace)
         {
-            case 0x20:
-            case 0x09:
-                return true;
+            switch (chr)
+            {
+                case 0x20:
+                case 0x09:
+                    return true;
+            }
+        }
+        if (chrAlphaNum)
+        {
+            if ((chr >= 0x30) && (chr <= 0x39)) return true;
+            if ((chr >= 0x41) && (chr <= 0x5A)) return true;
+            if ((chr >= 0x61) && (chr <= 0x7A)) return true;
+            if (chr >= 128)
+            {
+                if (Character.isLetterOrDigit(chr))
+                {
+                    return true;
+                }
+            }
+        }
+        if (chrSpecial)
+        {
+            if ((chr >= 0x21) && (chr <= 0x2F)) return true;
+            if ((chr >= 0x3A) && (chr <= 0x40)) return true;
+            if ((chr >= 0x5B) && (chr <= 0x60)) return true;
+            if ((chr >= 0x7B) && (chr <= 0x7E)) return true;
+            if (chr >= 128)
+            {
+                if (!Character.isLetterOrDigit(chr))
+                {
+                    return true;
+                }
+            }
         }
         return false;
     }
-    
-    public static boolean isSpaceOrSpecialChar(int chr)
-    {
-        return isSpecialChar(chr) || isSpaceChar(chr);
-    }
-    
 }
