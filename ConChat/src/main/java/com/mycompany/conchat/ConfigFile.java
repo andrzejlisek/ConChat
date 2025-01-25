@@ -151,6 +151,7 @@ public class ConfigFile
         else
         {
             Raw.put(Case(Name), Value);
+            RawFile.add(Case(Name) + "=");
         }
     }
 

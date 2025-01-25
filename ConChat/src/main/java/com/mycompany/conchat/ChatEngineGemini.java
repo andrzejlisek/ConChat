@@ -135,6 +135,7 @@ public class ChatEngineGemini extends ChatEngine
                 }
                 String answer = answer_.toString().trim();
                 tokensI = jsonResponse.getJSONObject("usageMetadata").getInt("promptTokenCount") - ctxTokens;
+                if (tokensI < 1) tokensI = 1;
                 tokensO = jsonResponse.getJSONObject("usageMetadata").getInt("candidatesTokenCount");
                 tokenCount(ctxTokens, tokensI, tokensO, testMode);
                 return answer;

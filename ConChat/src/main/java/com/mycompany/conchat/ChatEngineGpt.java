@@ -113,6 +113,7 @@ public class ChatEngineGpt extends ChatEngine
                 JSONObject jsonResponse = new JSONObject(response);
                 String answer = jsonResponse.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content").trim();
                 tokensI = jsonResponse.getJSONObject("usage").getInt("prompt_tokens") - ctxTokens;
+                if (tokensI < 1) tokensI = 1;
                 tokensO = jsonResponse.getJSONObject("usage").getInt("completion_tokens");
                 tokenCount(ctxTokens, tokensI, tokensO, testMode);
                 return answer;
