@@ -6,6 +6,8 @@
 package com.mycompany.conchat;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Timer;
@@ -24,6 +26,9 @@ public class ConChat
     
     static int inputBoxHeight = 2;
     static int waitSignState = 0;
+    static int waitTime = 0;
+    static String waitTimeStr = "";
+    static Instant waitTimeStart;
     
     static String archFileLast = "";
     
@@ -39,16 +44,42 @@ public class ConChat
                 case 3: ConsoleInputOutput_.printChar('|'); waitSignState++; break;
                 case 4: ConsoleInputOutput_.printChar('/'); waitSignState = 1; break;
             }
+            if (waitTime > 0)
+            {
+                int waitTimeVal = waitTime - (int)Duration.between(waitTimeStart, Instant.now()).toSeconds();
+                if (waitTimeVal > 0)
+                {
+                    int waitTimePad = waitTimeStr.length();
+                    waitTimeStr = " " + waitTimeVal;
+                    waitTimePad = waitTimePad - waitTimeStr.length();
+                    ConsoleInputOutput_.printString(waitTimeStr);
+                    if (waitTimePad > 0)
+                    {
+                        ConsoleInputOutput_.printString(CommonTools.stringIndent(waitTimePad, ' '));
+                    }
+                }
+                else
+                {
+                    if (waitTimeStr.length() > 0)
+                    {
+                        ConsoleInputOutput_.printString(CommonTools.stringIndent(waitTimeStr.length(), ' '));
+                        waitTimeStr = "";
+                    }
+                }
+            }
             ConsoleInputOutput_.printFlush();
         }
     }
     
-    static void waitStart()
+    static void waitStart(int waitTime_)
     {
         ScreenTextInput_.reset();
         ConsoleInputOutput_.setTextAttrBold1();
         ConsoleInputOutput_.setTextAttrReverse1();
 
+        waitTimeStr = "";
+        waitTime = waitTime_;
+        waitTimeStart = Instant.now();
         waitSignState = 1;
         waitIndicate();
 
@@ -67,6 +98,7 @@ public class ConChat
         timer.cancel();
         ConsoleInputOutput_.setTextAttrReverse0();
         ConsoleInputOutput_.setTextAttrBold0();
+        waitTime = 0;
     }
     
     static ConfigFile CF;
@@ -431,7 +463,7 @@ public class ConChat
     
     static void updateEngineList(boolean getFromServer, boolean updateListFile, ChatEngine e1, ChatEngine e2)
     {
-        waitStart();
+        waitStart(0);
 
         if (updateListFile)
         {
@@ -927,7 +959,7 @@ public class ConChat
                                 ScreenTextDisp_[ctx].supplyLine("");
                                 ScreenTextDisp_[ctx].displayScrollDn(-1);
 
-                                waitStart();
+                                waitStart(CF.ParamGetI("WaitTimeout"));
                                 String SS = "?";
                                 if (ChatEngineGpt_.isActive)
                                 {
