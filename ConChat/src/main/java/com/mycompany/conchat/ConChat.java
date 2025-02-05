@@ -91,6 +91,21 @@ public class ConChat
             }
         }, 250, 250);
     }
+
+    static void waitStopX()
+    {
+        waitSignState = 0;
+        timer.cancel();
+        ConsoleInputOutput_.setCursorPos(0, ConsoleInputOutput_.screenHeight - inputBoxHeight);
+        ConsoleInputOutput_.printChar(' ');
+        if (waitTimeStr.length() > 0)
+        {
+            ConsoleInputOutput_.printString(CommonTools.stringIndent(waitTimeStr.length(), ' '));
+            waitTimeStr = "";
+        }
+        ConsoleInputOutput_.setCursorPos(0, ConsoleInputOutput_.screenHeight - inputBoxHeight);
+        waitTime = 0;
+    }
     
     static void waitStop()
     {
@@ -148,7 +163,7 @@ public class ConChat
         ScreenTextDisp_[10].supplyLine("Commands:");
         ScreenTextDisp_[10].supplyLine(" `clear` - clear the current context");
         ScreenTextDisp_[10].supplyLine(" `exit` - exit from this application");
-        ScreenTextDisp_[10].supplyLine(" `resize` - repaint the interface after resize or change cell width");
+        ScreenTextDisp_[10].supplyLine(" `repaint` - repaint the interface after terminal resize or change cell width");
         ScreenTextDisp_[10].supplyLine(" `copy` - copy the current message to edit field");
         ScreenTextDisp_[10].supplyLine(" `counterreset` - reset the token counter for the selected model");
         ScreenTextDisp_[10].supplyLine(" `archive` - archive the current context");
@@ -418,7 +433,7 @@ public class ConChat
             refreshSettingText();
             return false;
         }
-        if (cmd.equals("resize"))
+        if (cmd.equals("repaint"))
         {
             ConsoleInputOutput_.screenClear();
             ConsoleInputOutput_.getScreenSize();
@@ -433,6 +448,7 @@ public class ConChat
                 inputBoxHeight = inputBoxHeight_ + (inputBoxHeight_ % 2);
             }
             
+            ConsoleInputOutput_.charSizeReset(CF.ParamGetB("MarkdownDuospace"));
             ScreenTextDisp.displayResize(ConsoleInputOutput_.screenHeight - inputBoxHeight);
             for (int i = 0; i < (workContextCount + 1); i++)
             {
@@ -452,11 +468,51 @@ public class ConChat
             
             return false;
         }
-        /*if (cmd.equals("models"))
+        if (cmd.equals("markdowntest"))
         {
-            updateEngineList(true, true, e1, e2);
+            for (int i = 0; i < (workContextCount + 1); i++)
+            {
+                ScreenTextDisp_[i].parseMarkdown = !ScreenTextDisp_[i].parseMarkdown;
+                if (i < workContextCount)
+                {
+                    contextReload(i, true);
+                }
+            }
+            refreshSettingText();
             return false;
-        }*/
+        }
+        if (cmd.equals("markdownheader1") || cmd.equals("markdownheader2") || cmd.equals("markdownheader3") || cmd.equals("markdownheader4") || cmd.equals("markdownheader5") || cmd.equals("markdownheader6") || cmd.equals("markdownheader7"))
+        {
+            CF.ParamSet("MarkdownHeader", cmd.substring(14));
+            CF.FileSave(CommonTools.applDir + CommonTools.configFileName);
+            for (int i = 0; i < workContextCount; i++)
+            {
+                contextReload(i, true);
+            }
+            return false;
+        }
+        if (cmd.equals("markdownduospace0"))
+        {
+            CF.ParamSet("MarkdownDuospace", false);
+            CF.FileSave(CommonTools.applDir + CommonTools.configFileName);
+            ConsoleInputOutput_.charSizeReset(false);
+            for (int i = 0; i < workContextCount; i++)
+            {
+                contextReload(i, true);
+            }
+            return false;
+        }
+        if (cmd.equals("markdownduospace1"))
+        {
+            CF.ParamSet("MarkdownDuospace", true);
+            CF.FileSave(CommonTools.applDir + CommonTools.configFileName);
+            ConsoleInputOutput_.charSizeReset(true);
+            for (int i = 0; i < workContextCount; i++)
+            {
+                contextReload(i, true);
+            }
+            return false;
+        }
 
         return true;
     }
@@ -727,6 +783,11 @@ public class ConChat
             appUnusable = true;
         }
         
+        if (CF.ParamGetI("MarkdownHeader") < 1)
+        {
+            CF.ParamSet("MarkdownHeader", 4);
+        }
+        
         if (appUnusable)
         {
             System.out.println("Work path:");
@@ -745,6 +806,7 @@ public class ConChat
         try
         {
             ConsoleInputOutput_ = new ConsoleInputOutput();
+            ConsoleInputOutput_.charSizeReset(CF.ParamGetB("MarkdownDuospace"));
         }
         catch (IOException e)
         {
@@ -777,7 +839,7 @@ public class ConChat
         workContext = CF.ParamGetI("Context");
         if ((workContext < 0) || (workContext > 9)) workContext = 0;
         
-        isStandardCommand("resize", null, null);
+        isStandardCommand("repaint", null, null);
         
         ChatEngine ChatEngineGpt_ = new ChatEngineGpt(CF, CFC);
         ChatEngine ChatEngineGemini_ = new ChatEngineGemini(CF, CFC);
@@ -974,6 +1036,14 @@ public class ConChat
                                     tokensI = ChatEngineGemini_.tokensI;
                                     tokensO = ChatEngineGemini_.tokensO;
                                     tokensE = ChatEngineGemini_.tokensE;
+                                }
+                                
+
+                                // Measure new characters to avid display glitches
+                                waitStopX();
+                                for (int i = 0; i < SS.length(); i++)
+                                {
+                                    ConsoleInputOutput_.charSize(SS.charAt(i));
                                 }
                                 waitStop();
 

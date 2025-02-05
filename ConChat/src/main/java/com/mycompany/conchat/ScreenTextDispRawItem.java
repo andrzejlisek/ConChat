@@ -20,6 +20,9 @@ public class ScreenTextDispRawItem
     textTypeDef textType = textTypeDef.normal;
     String textLine;
     String textLineWrap;
+    int textLineCells;
+    int textLineLength;
+    int[] textLineCharSize;
     ArrayList<Integer> cmdIdx;
     ArrayList<Integer> cmdTxt;
     int lineFormat;
@@ -34,6 +37,7 @@ public class ScreenTextDispRawItem
         lineFormat = 0;
         textLine = "";
         textLineWrap = "";
+        textLineCharSize = null;
         lineNumber = lineNumber_;
         cmdIdx = new ArrayList<>();
         cmdTxt = new ArrayList<>();
@@ -50,6 +54,7 @@ public class ScreenTextDispRawItem
         lineFormat = item.lineFormat;
         textLine = "";
         textLineWrap = "";
+        textLineCharSize = null;
         lineNumber = item.lineNumber;
         cmdIdx = new ArrayList<>();
         cmdTxt = new ArrayList<>();
@@ -70,6 +75,33 @@ public class ScreenTextDispRawItem
         }
     }
 
+    public int textLineIndexOfCell(char chr, int lastPos)
+    {
+        int ptr = 0;
+        int posSum = 0;
+        while (posSum < lastPos)
+        {
+            posSum += textLineCharSize[ptr];
+            ptr++;
+            if (ptr >= textLineCharSize.length)
+            {
+                return -1;
+            }
+        }
+
+        while (ptr < textLineCharSize.length)
+        {
+            if (textLine.charAt(ptr) == chr)
+            {
+                return posSum;
+            }
+            posSum += textLineCharSize[ptr];
+            ptr++;
+        }
+
+        return -1;
+    }
+    
     public void cmdTrim()
     {
         for (int i = 0; i < cmdIdx.size(); i++)

@@ -37,6 +37,13 @@ The configuration file **config\.txt** has the following options, the italic opt
   * **1** \- Append every request and response to log file, do not clear the file\.
   * **2** \- Append every request and response to log file, clear the log file at the **ConChat** startup\.
 * ***Context*** \- Number of startup chat context\. **ConChat** contains 10 chat contexts numbered from 0 to 9\.
+* ***MarkdownHeader*** \- The first header level, which will be indicated by smaller font\.
+* ***MarkdownDuospace*** \- Measure the non\-ASCII characters in order to propertly display using the duo space fonts in terminal:
+  * **0** \- Assume, thal all characters are the single cell width\. Use this in the following cases:
+    * Conversations contains the ASCII characters and other single width characters only, like latin\-based characters\.
+    * The terminal application uses monospace font\.
+    * There are problems with character width measurement\.
+  * **1** \- Measure non\-ASCII characters\. Use if the conversations contains double\-width characters, like CJK characters i duospace fonts\. Every non\-ASCII character wil be measured\.
 * **TestModel** \- Test message to test model validity to text chat while creating model list\. If the text is blank, the test is not performed\.
 
 # ConChat run
@@ -76,11 +83,19 @@ In both states, everytime you can press these keys:
   * **Blank field** \- Switch between the two states\.
   * **"clear"** \- Clear the current context \(conversation\)\.
   * **"exit"** \- Exit from **ConChat**\.
-  * **"resize"** \- Repaint the interface after resize\. This command also clears all contextes and reloads them from files\.
+  * **"repaint"** \- Repaint the interface after resize\. This command also clears all contextes and reloads them from files\. Use the command even if you change the font typeface in console/terminal application when the contexts contains special characters, which can be double width, like CJK characters\.
   * **"copy"** \- Copy the current message \(in the middle of the screen\) to edit field\. Then, you can edit this question before send\.
   * **"counterreset"** \- Reset the tonen counter for the currently selected model\.
   * **"archive"** \- Archive the current context to file\. The physical file will by named by **contextXYZ\.txt**, where XYZ is current date/time stamp written by 14 digits\.
   * **"archdelete"** \- Delete last created or restored archive, which is highlighted\.
+  * **"markdowntest"** \- Switch into the raw text display instead of the **Markdown** text\. Send one more time for returning switch into standard display\. Usable for debugging **Markdown** display glitches\.
+  * **"markdownheader?"** \- Use the digit from **1** to **7** instead of **?** character\. Changes the header display threshold as following examples:
+    * **"markdownheader1"** \- Displays all header levels using smaller font\.
+    * **"markdownheader2"** \- Displays the first leves using larger font and other header levels using smaller font\.
+    * **"markdownheader6"** \- Displays the first five leves using larger font and last header level using smaller font\.
+    * **"markdownheader7"** \- Displays all header levels using larger font\.
+  * **"markdownduospace0"** \- Disable duospace font while Markdown display\. Use, when the console uses monospace font and all characters are assumed, that covers single cell\.
+  * **"markdownduospace1"** \- Enable duospace font while Markdown display\. Use, when the console uses duospace font and non\-ASCII characters will be measured\.
   * **Other text** \- Depends on state and text, described in below subchapters\. 
 * **Up Arrow**, **Down Arrow**, **Page Up**, **Page Down**, **Home**, **End** \- Scroll the text in answer screen\.
 * **Left Arrow**, **Right Arrow** \- Move cursor across input text\.
@@ -139,6 +154,25 @@ There are two ways to change the current model or restore archive context:
 * Input the model name or archive context name and press **Enter**\.
 
 The currently selected model is highlighted\. The archive context will be highlighted after restored\.
+
+## Duospace fonts
+
+The current version of **ConChat** supports duospace fonts in answer display and **Markdown** parse\. The actual duospace characters are not arbitrally defined and depends on font used in the text terminal\. You can switch the duospace font support by **MarkdownDuospace** parameter in **config\.txt** or by using **markdownduospace0** or **markdownduospace1** commands\.
+
+**ConChat** while duospace font is enabled, assumes, that all ASCII characters covers single cell\. Some non\-ASCII characters can cover two cells instead of one cell\. The such character occurs in the context file, the **ConChat** measures the character width by writin in the screen and getting the cursor position\. Every character is measuded once until close application or perform the **repaint** command\.
+
+There is the reason, why the application start up may take a while, if the context files contains the non\-ASCII characters\.
+
+For instance, assume, that the the conversation contains the following text:
+
+```
+Czarna krowa w kropki bordo
+gryz**ł**a traw**ę** kr**ę**c**ą**c mord**ą**.
+Kr**ę**c**ą**c mord**ą** i rogami
+gryz**ł**a traw**ę** wraz z jaskrami.
+```
+
+The bolded character will be measured at the first occurence after application startup or last **repaint** command\.\.
 
 # Available model list
 

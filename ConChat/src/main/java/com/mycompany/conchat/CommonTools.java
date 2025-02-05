@@ -484,4 +484,18 @@ public class CommonTools
         }
         return false;
     }
+    
+    public static String exceptionToStr(Exception e)
+    {
+        String msg = e.getMessage();
+        for (int i = 0; i < e.getStackTrace().length; i++)
+        {
+            String stackItem = e.getStackTrace()[i].toString();
+            if (!stackItem.startsWith("java.base"))
+            {
+                msg = msg + "|" + stackItem;
+            }
+        }
+        return msg;
+    }
 }

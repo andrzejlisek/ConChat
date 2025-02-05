@@ -6,6 +6,7 @@
 package com.mycompany.conchat;
 
 import java.io.IOException;
+import java.util.HashMap;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 
@@ -446,5 +447,74 @@ public class ConsoleInputOutput
     void scrollUp()
     {
         printEscString("M");
+    }
+    
+    private final HashMap<Integer, Integer> charSizeMap = new HashMap<>();
+    
+    private boolean charSizeDuospace = true;
+    
+    /**
+     * Reset character size data
+     */
+    void charSizeReset(boolean charSizeDuospace_)
+    {
+        charSizeDuospace = charSizeDuospace_;
+        charSizeMap.clear();
+        charSizeMap.put((int)CommonTools.tableH, 1);
+        charSizeMap.put((int)CommonTools.tableV, 1);
+        charSizeMap.put((int)CommonTools.tableC, 1);
+        charSizeMap.put((int)CommonTools.tableT, 1);
+        charSizeMap.put((int)CommonTools.tableB, 1);
+        charSizeMap.put((int)CommonTools.tableL, 1);
+        charSizeMap.put((int)CommonTools.tableR, 1);
+        charSizeMap.put((int)CommonTools.table1, 1);
+        charSizeMap.put((int)CommonTools.table2, 1);
+        charSizeMap.put((int)CommonTools.table3, 1);
+        charSizeMap.put((int)CommonTools.table4, 1);
+        charSizeMap.put((int)CommonTools.scrollL, 1);
+        charSizeMap.put((int)CommonTools.scrollR, 1);
+        charSizeMap.put((int)CommonTools.background, 1);
+        charSizeMap.put((int)CommonTools.splitter, 1);
+        charSizeMap.put((int)CommonTools.splitterInfo, 1);
+    }
+    
+    /**
+     * Get character size for proper text wrap
+     * @param chr Character number
+     * @return Character size in text cells
+     */
+    int charSize(int chr)
+    {
+        if (charSizeDuospace)
+        {
+            if (chr < 128)
+            {
+                return 1;
+            }
+
+            if (charSizeMap.containsKey(chr))
+            {
+                return charSizeMap.get(chr);
+            }
+
+            getCursorPos();
+            int tempX = terminalReport[1] - 1;
+            int tempY = terminalReport[0] - 1;
+
+            printChar((char)chr);
+            printFlush();
+            getCursorPos();
+            int tempX0 = terminalReport[1] - 1;
+
+            setCursorPos(tempX, tempY);
+
+            charSizeMap.put(chr, tempX0 - tempX);
+
+            return tempX0 - tempX;
+        }
+        else
+        {
+            return 1;
+        }
     }
 }

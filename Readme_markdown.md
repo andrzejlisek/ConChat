@@ -119,13 +119,13 @@ The technical splitter is not standard Markdown feature and is implemented for u
 The table state will be enabled, when the the text line meets the following conditions:
 
 
-* Starts with **vertical bar** character\.
-* Ends with **vertical bar** character\.
+* Contains **vertical bar** character\.
 * Contains the **triple minus** character sequence\.
+* Does not contain the alphanumeric character within the same text line\.
 
 Enabling the table state implies conversion the previous text line into table part, assuming the line contains table header\.
 
-In the table state, the first line, which does neither starts with **vertical bar**, not ends with **vertical bar**, disables the table state and formats the table\.
+In the table state, the first line, which does not contain the **vertical bar**, disables the table state and formats the table\.
 
 ## Blank line
 

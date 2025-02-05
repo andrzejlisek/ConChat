@@ -24,6 +24,8 @@ public class ScreenTextDisp
     private final ConsoleInputOutput ConsoleInputOutput_;
     String fileName = "";
     
+    boolean parseMarkdown = true;
+    
     ArrayList<ScreenTextDispRawItem> textRaw;
     ArrayList<ScreenTextDispMessage> textMsg;
     int blockIdCounter;
@@ -75,6 +77,14 @@ public class ScreenTextDisp
         int id = textRaw.get(idx1).blockId;
         while ((idx >= 0) && (id == textRaw.get(idx1).blockId))
         {
+            if (!textRaw.get(idx1).textLine.startsWith("|"))
+            {
+                textRaw.get(idx1).textLine = "|" + textRaw.get(idx1).textLine;
+            }
+            if (!textRaw.get(idx1).textLine.endsWith("|"))
+            {
+                textRaw.get(idx1).textLine = textRaw.get(idx1).textLine + "|";
+            }
             idx1--;
         }
         idx1++;
@@ -189,7 +199,8 @@ public class ScreenTextDisp
                 int posMax = -1;
                 for (int i = idx1; i <= idx2; i++)
                 {
-                    charPos[i - idx1] = textRaw.get(i).textLine.indexOf("|", lastPos);
+                    textRawItemMeasureChars(i, true);
+                    charPos[i - idx1] = textRaw.get(i).textLineIndexOfCell('|', lastPos);
                     posMin = Math.min(posMin, charPos[i - idx1]);
                     posMax = Math.max(posMax, charPos[i - idx1]);
                 }
@@ -234,7 +245,8 @@ public class ScreenTextDisp
 
             for (int i = idx1; i <= idx2; i++)
             {
-                int chrIdx = textRaw.get(i).textLine.indexOf('|');
+                textRawItemMeasureChars(i, true);
+                int chrIdx = textRaw.get(i).textLine.indexOf('|', 0);
                 while (chrIdx >= 0)
                 {
                     textRaw.get(i).textLine = CommonTools.stringSetChar(textRaw.get(i).textLine, chrIdx, CommonTools.tableV);
@@ -266,31 +278,59 @@ public class ScreenTextDisp
         item.MessageIdx = messageIdxCounter;
         try
         {
-            boolean notInBlock = (!MarkdownEquationBlock) && (!MarkdownQuoteBlock) && (!MarkdownEquation) && (!MarkdownQuote);
-
-            int textLineBegin = 0;
-
-            int noSpaceIdx = 0;
-            if (notInBlock)
+            if (parseMarkdown)
             {
-                while ((noSpaceIdx < item.textLine.length()) && ((item.textLine.charAt(noSpaceIdx) == ' ') || (item.textLine.charAt(noSpaceIdx) == '>')))
+                boolean notInBlock = (!MarkdownEquationBlock) && (!MarkdownQuoteBlock) && (!MarkdownEquation) && (!MarkdownQuote);
+
+
+                int textLineBegin = 0;
+
+                int noSpaceIdx = 0;
+                if (notInBlock)
                 {
-                    noSpaceIdx++;
-                }
-                if (noSpaceIdx < (item.textLine.length() - 1))
-                {
-                    // Punctation list item
-                    int nextSpace = item.textLine.indexOf(" ", noSpaceIdx);
-                    if (nextSpace > 0)
+                    while ((noSpaceIdx < item.textLine.length()) && ((item.textLine.charAt(noSpaceIdx) == ' ') || (item.textLine.charAt(noSpaceIdx) == '>')))
                     {
-                        char itemChr = item.textLine.charAt(nextSpace - 1);
-                        if (nextSpace - noSpaceIdx == 1)
+                        noSpaceIdx++;
+                    }
+                    if (noSpaceIdx < (item.textLine.length() - 1))
+                    {
+                        // Punctation list item
+                        int nextSpace = item.textLine.indexOf(" ", noSpaceIdx);
+                        if (nextSpace > 0)
                         {
-                            switch (itemChr)
+                            char itemChr = item.textLine.charAt(nextSpace - 1);
+                            if (nextSpace - noSpaceIdx == 1)
                             {
-                                case '-':
-                                case '*':
-                                case '+':
+                                switch (itemChr)
+                                {
+                                    case '-':
+                                    case '*':
+                                    case '+':
+                                        textLineBegin = nextSpace + 1;
+                                        while ((textLineBegin < (item.textLine.length() - 1)) && (item.textLine.charAt(textLineBegin) == ' '))
+                                        {
+                                            textLineBegin++;
+                                        }
+                                        item.indent = noSpaceIdx;
+                                        item.indentNext = textLineBegin;
+                                        MarkdownAfterListItem = true;
+                                        break;
+                                }
+                            }
+                            if ((nextSpace - noSpaceIdx > 1) && (itemChr == '.'))
+                            {
+                                boolean onlyDigits = true;
+                                for (int ii = noSpaceIdx; ii < (nextSpace - 1); ii++)
+                                {
+                                    char digitChr = item.textLine.charAt(ii);
+                                    if ((digitChr < 48) || (digitChr > 57))
+                                    {
+                                        onlyDigits = false;
+                                        break;
+                                    }
+                                }
+                                if (onlyDigits)
+                                {
                                     textLineBegin = nextSpace + 1;
                                     while ((textLineBegin < (item.textLine.length() - 1)) && (item.textLine.charAt(textLineBegin) == ' '))
                                     {
@@ -299,516 +339,553 @@ public class ScreenTextDisp
                                     item.indent = noSpaceIdx;
                                     item.indentNext = textLineBegin;
                                     MarkdownAfterListItem = true;
-                                    break;
-                            }
-                        }
-                        if ((nextSpace - noSpaceIdx > 1) && (itemChr == '.'))
-                        {
-                            boolean onlyDigits = true;
-                            for (int ii = noSpaceIdx; ii < (nextSpace - 1); ii++)
-                            {
-                                char digitChr = item.textLine.charAt(ii);
-                                if ((digitChr < 48) || (digitChr > 57))
-                                {
-                                    onlyDigits = false;
-                                    break;
                                 }
-                            }
-                            if (onlyDigits)
-                            {
-                                textLineBegin = nextSpace + 1;
-                                while ((textLineBegin < (item.textLine.length() - 1)) && (item.textLine.charAt(textLineBegin) == ' '))
-                                {
-                                    textLineBegin++;
-                                }
-                                item.indent = noSpaceIdx;
-                                item.indentNext = textLineBegin;
-                                MarkdownAfterListItem = true;
                             }
                         }
                     }
-                }
-                else
-                {
-                    // Blank line resets text attribute state
-                    textRawItemMarkdownParseReset(false, false);
-                }
-            }
-
-            
-            String windowingText = "     " + item.textLine.substring(textLineBegin) + "     ";
-            int removedChars = 0;
-            if (MarkdownQuoteBlock || MarkdownEquationBlock)
-            {
-                item.textType = ScreenTextDispRawItem.textTypeDef.code;
-                item.blockId = blockIdCounter;
-            }
-            for (int i = 0; i < windowingText.length() - 5; i++)
-            {
-                MarkdownWindow[0] = windowingText.charAt(i + 0);
-                MarkdownWindow[1] = windowingText.charAt(i + 1);
-                MarkdownWindow[2] = windowingText.charAt(i + 2);
-                MarkdownWindow[3] = windowingText.charAt(i + 3);
-                MarkdownWindow[4] = windowingText.charAt(i + 4);
-
-                notInBlock = (!MarkdownEquationBlock) && (!MarkdownQuoteBlock) && (!MarkdownEquation) && (!MarkdownQuote);
-                boolean __EB = !MarkdownEquationBlock;
-                boolean __QB = !MarkdownQuoteBlock;
-                boolean __E = !MarkdownEquation;
-                boolean __Q = !MarkdownQuote;
-                int idx0 = i + textLineBegin - removedChars;
-
-                // Single character
-                if ((MarkdownWindow[2] != '\\'))
-                {
-                    if (notInBlock && (((MarkdownWindow[2] != '_') && (MarkdownWindow[3] == '_') && (MarkdownWindow[4] != '_')) || ((MarkdownWindow[2] != '*') && (MarkdownWindow[3] == '*') && (MarkdownWindow[4] != '*'))))
+                    else
                     {
-                        boolean isAllowed = false;
-                        if (MarkdownItalic)
+                        // Blank line resets text attribute state
+                        textRawItemMarkdownParseReset(false, false);
+                    }
+                }
+
+
+                String windowingText = "     " + item.textLine.substring(textLineBegin) + "     ";
+                int removedChars = 0;
+                if (MarkdownQuoteBlock || MarkdownEquationBlock)
+                {
+                    item.textType = ScreenTextDispRawItem.textTypeDef.code;
+                    item.blockId = blockIdCounter;
+                }
+                for (int i = 0; i < windowingText.length() - 5; i++)
+                {
+                    MarkdownWindow[0] = windowingText.charAt(i + 0);
+                    MarkdownWindow[1] = windowingText.charAt(i + 1);
+                    MarkdownWindow[2] = windowingText.charAt(i + 2);
+                    MarkdownWindow[3] = windowingText.charAt(i + 3);
+                    MarkdownWindow[4] = windowingText.charAt(i + 4);
+
+                    notInBlock = (!MarkdownEquationBlock) && (!MarkdownQuoteBlock) && (!MarkdownEquation) && (!MarkdownQuote);
+                    boolean __EB = !MarkdownEquationBlock;
+                    boolean __QB = !MarkdownQuoteBlock;
+                    boolean __E = !MarkdownEquation;
+                    boolean __Q = !MarkdownQuote;
+                    int idx0 = i + textLineBegin - removedChars;
+
+                    // Single character
+                    if ((MarkdownWindow[2] != '\\'))
+                    {
+                        if (notInBlock && (((MarkdownWindow[2] != '_') && (MarkdownWindow[3] == '_') && (MarkdownWindow[4] != '_')) || ((MarkdownWindow[2] != '*') && (MarkdownWindow[3] == '*') && (MarkdownWindow[4] != '*'))))
                         {
-                            if ((CommonTools.isChar(MarkdownWindow[2], false, true, true)) && (CommonTools.isChar(MarkdownWindow[4], true, false, true)))
+                            boolean isAllowed = false;
+                            if (MarkdownItalic)
                             {
-                                isAllowed = true;
-                            }
-                            else
-                            {
-                                if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[2], false, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, false)))
+                                if ((CommonTools.isChar(MarkdownWindow[2], false, true, true)) && (CommonTools.isChar(MarkdownWindow[4], true, false, true)))
                                 {
                                     isAllowed = true;
                                 }
-                            }
-                            
-                            if (isAllowed)
-                            {
-                                MarkdownItalic = !MarkdownItalic;
-                                item.remove(idx0 - 2, 1);
-                                item.setCommand(idx0 - 2, MarkdownItalic ? 21 : 20);
-                                removedChars++;
-                            }
-                        }
-                        else
-                        {
-                            if ((CommonTools.isChar(MarkdownWindow[2], true, false, true)) && (CommonTools.isChar(MarkdownWindow[4], false, true, true)))
-                            {
-                                isAllowed = true;
-                            }
-                            else
-                            {
-                                if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[2], false, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, false)))
+                                else
                                 {
-                                    isAllowed = true;
-                                }
-                            }
-                            
-                            if (isAllowed)
-                            {
-                                MarkdownItalic = !MarkdownItalic;
-                                item.remove(idx0 - 2, 1);
-                                item.setCommand(idx0 - 2, MarkdownItalic ? 21 : 20);
-                                removedChars++;
-                            }
-                        }
-                    }
-                }
-
-                if (__EB && __QB && __E && (MarkdownWindow[2] != '`') && (MarkdownWindow[3] == '`') && (MarkdownWindow[4] != '`'))
-                {
-                    if (!MarkdownQuote2)
-                    {
-                        if (MarkdownQuote || (MarkdownWindow[2] != '\\'))
-                        {
-                            MarkdownQuote = !MarkdownQuote;
-                            item.remove(idx0 - 2, 1);
-                            item.setCommand(idx0 - 2, MarkdownQuote ? 31 : 30);
-                            removedChars++;
-                        }
-                    }
-                }
-                /*if (__EB && __QB && __Q && (MarkdownWindow[2] != '$') && (MarkdownWindow[3] == '$') && (MarkdownWindow[4] != '$'))
-                {
-                    MarkdownEquation = !MarkdownEquation;
-                    item.remove(idx0 - 2, 1);
-                    item.setCommand(idx0 - 2, MarkdownEquation ? 31 : 30);
-                    removedChars++;
-                }*/
-
-                // Double character
-                if (MarkdownWindow[1] != '\\')
-                {
-                    if (notInBlock && (((MarkdownWindow[1] != '_') && (MarkdownWindow[2] == '_') && (MarkdownWindow[3] == '_') && (MarkdownWindow[4] != '_')) || ((MarkdownWindow[1] != '*') && (MarkdownWindow[2] == '*') && (MarkdownWindow[3] == '*') && (MarkdownWindow[4] != '*'))))
-                    {
-                        boolean isAllowed = false;
-                        if (MarkdownBold)
-                        {
-                            if ((CommonTools.isChar(MarkdownWindow[1], false, true, true)) && (CommonTools.isChar(MarkdownWindow[4], true, false, true)))
-                            {
-                                isAllowed = true;
-                            }
-                            else
-                            {
-                                if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[1], false, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, false)))
-                                {
-                                    isAllowed = true;
-                                }
-                            }
-
-                            if (isAllowed)
-                            {
-                                MarkdownBold = !MarkdownBold;
-                                item.remove(idx0 - 3, 2);
-                                item.setCommand(idx0 - 3, MarkdownBold ? 11 : 10);
-                                removedChars++;
-                                removedChars++;
-                            }
-                        }
-                        else
-                        {
-                            if ((CommonTools.isChar(MarkdownWindow[1], true, false, true)) && (CommonTools.isChar(MarkdownWindow[4], false, true, true)))
-                            {
-                                isAllowed = true;
-                            }
-                            else
-                            {
-                                if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[1], false, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, false)))
-                                {
-                                    isAllowed = true;
-                                }
-                            }
-
-                            if (isAllowed)
-                            {
-                                MarkdownBold = !MarkdownBold;
-                                item.remove(idx0 - 3, 2);
-                                item.setCommand(idx0 - 3, MarkdownBold ? 11 : 10);
-                                removedChars++;
-                                removedChars++;
-                            }
-                        }
-                    }
-                    if (notInBlock && (MarkdownWindow[1] != '~') && (MarkdownWindow[2] == '~') && (MarkdownWindow[3] == '~') && (MarkdownWindow[4] != '~'))
-                    {
-                        item.remove(idx0 - 3, 2);
-                        removedChars++;
-                        removedChars++;
-                    }
-                    if (__QB && __E && __Q && (MarkdownWindow[1] != '$') && (MarkdownWindow[2] == '$') && (MarkdownWindow[3] == '$') && (MarkdownWindow[4] != '$'))
-                    {
-                        MarkdownEquationBlock = !MarkdownEquationBlock;
-                        if (MarkdownEquationBlock) blockIdCounter++;
-                        item.remove(idx0 - 3, 2);
-                        removedChars++;
-                        removedChars++;
-                    }
-                    if (__QB && __E && __Q && (MarkdownWindow[1] != '$') && (MarkdownWindow[2] == '\\') && ((MarkdownWindow[3] == '[') || (MarkdownWindow[3] == ']')) && (MarkdownWindow[4] != '$'))
-                    {
-                        MarkdownEquationBlock = !MarkdownEquationBlock;
-                        if (MarkdownEquationBlock) blockIdCounter++;
-                        item.remove(idx0 - 3, 2);
-                        removedChars++;
-                        removedChars++;
-                    }
-                    if (__EB && __E && __Q && (MarkdownWindow[1] != '`') && (MarkdownWindow[2] == '`') && (MarkdownWindow[3] == '`') && (MarkdownWindow[4] != '`'))
-                    {
-                        MarkdownQuote2 = !MarkdownQuote2;
-                        item.remove(idx0 - 3, 2);
-                        item.setCommand(idx0 - 3, MarkdownQuote2 ? 31 : 30);
-                        removedChars++;
-                        removedChars++;
-                    }
-                }
-
-                // Triple character
-                if (MarkdownWindow[0] != '\\')
-                {
-                    if (notInBlock && (((MarkdownWindow[0] != '*') && (MarkdownWindow[1] == '*') && (MarkdownWindow[2] == '*') && (MarkdownWindow[3] == '*') && (MarkdownWindow[4] != '*')) || ((MarkdownWindow[0] != '_') && (MarkdownWindow[1] == '_') && (MarkdownWindow[2] == '_') && (MarkdownWindow[3] == '_') && (MarkdownWindow[4] != '_'))))
-                    {
-                        boolean isAllowed = false;
-                        if (MarkdownBold && MarkdownItalic)
-                        {
-                            if ((CommonTools.isChar(MarkdownWindow[0], false, true, true)) && (CommonTools.isChar(MarkdownWindow[4], true, false, true)))
-                            {
-                                isAllowed = true;
-                            }
-                            else
-                            {
-                                if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[0], false, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, false)))
-                                {
-                                    isAllowed = true;
-                                }
-                            }
-
-                            if (isAllowed)
-                            {
-                                MarkdownBold = !MarkdownBold;
-                                MarkdownItalic = !MarkdownItalic;
-                                item.remove(idx0 - 4, 3);
-                                item.setCommand(idx0 - 4, MarkdownBold ? 11 : 10);
-                                item.setCommand(idx0 - 4, MarkdownItalic ? 21 : 20);
-                                removedChars += 3;
-                            }
-                        }
-                        else if ((!MarkdownBold) && (!MarkdownItalic))
-                        {
-                            if ((CommonTools.isChar(MarkdownWindow[0], true, false, true)) && (CommonTools.isChar(MarkdownWindow[4], false, true, true)))
-                            {
-                                isAllowed = true;
-                            }
-                            else
-                            {
-                                if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[0], false, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, false)))
-                                {
-                                    isAllowed = true;
-                                }
-                            }
-
-                            if (isAllowed)
-                            {
-                                MarkdownBold = !MarkdownBold;
-                                MarkdownItalic = !MarkdownItalic;
-                                item.remove(idx0 - 4, 3);
-                                item.setCommand(idx0 - 4, MarkdownBold ? 11 : 10);
-                                item.setCommand(idx0 - 4, MarkdownItalic ? 21 : 20);
-                                removedChars += 3;
-                            }
-                        }
-                    }
-                    if (__EB && __E && __Q && (MarkdownWindow[0] != '`') && (MarkdownWindow[1] == '`') && (MarkdownWindow[2] == '`') && (MarkdownWindow[3] == '`') && (MarkdownWindow[4] != '`'))
-                    {
-                        MarkdownQuoteBlock = !MarkdownQuoteBlock;
-                        if (MarkdownQuoteBlock) blockIdCounter++;
-                        item.textType = ScreenTextDispRawItem.textTypeDef.code;
-                        item.remove(idx0 - 4, 3);
-                        removedChars += 3;
-                    }
-                    if (__EB && __E && __Q && (MarkdownWindow[0] != '~') && (MarkdownWindow[1] == '~') && (MarkdownWindow[2] == '~') && (MarkdownWindow[3] == '~') && (MarkdownWindow[4] != '~'))
-                    {
-                        MarkdownQuoteBlock = !MarkdownQuoteBlock;
-                        if (MarkdownQuoteBlock) blockIdCounter++;
-                        item.textType = ScreenTextDispRawItem.textTypeDef.code;
-                        item.remove(idx0 - 4, 3);
-                        removedChars += 3;
-                    }
-                }
-                
-                if (notInBlock)
-                {
-                    // Remove escape character
-                    if (MarkdownWindow[3] == '\\')
-                    {
-                        int escapedChar = MarkdownWindow[4];
-                        if (CommonTools.isChar(escapedChar, false, false, true))
-                        {
-                            // Not remove ]\ and \[
-                            // Convert \[ and \] to $$
-                            if ((MarkdownWindow[4] != '[') && (MarkdownWindow[4] != ']'))
-                            {
-                                item.remove(idx0 - 2, 1);
-                                removedChars++;
-
-                                // Modify windowing string to avoid recursively remove
-                                if (escapedChar == '\\')
-                                {
-                                    windowingText = CommonTools.stringSetChar(windowingText, i + 4, 'X');
-                                }
-                            }
-                            else
-                            {
-                                windowingText = CommonTools.stringSetChar(windowingText, i + 3, '$');
-                                windowingText = CommonTools.stringSetChar(windowingText, i + 4, '$');
-                            }
-                        }
-                    }
-                    
-                    // Remove multiple spaces
-                    if ((MarkdownWindow[2] != ' ') && (MarkdownWindow[3] == ' ') && (MarkdownWindow[4] == ' '))
-                    {
-                        // Measue space sequence length
-                        int spaceCount = 0;
-                        int spaceMargin = 5;
-                        int spaceWindowOffset = 3;
-                        while ((windowingText.length() > (i + spaceWindowOffset + spaceCount + spaceMargin)) && (windowingText.charAt(i + spaceWindowOffset + spaceCount) == ' '))
-                        {
-                            spaceCount++;
-                        }
-
-                        // Remove additional spaces
-                        while (spaceCount > 1)
-                        {
-                            item.remove(idx0 - 2, 1);
-                            removedChars++;
-                            spaceCount--;
-                        }
-                    }
-                }
-            }
-            if (MarkdownQuoteBlock || MarkdownEquationBlock)
-            {
-                item.textType = ScreenTextDispRawItem.textTypeDef.code;
-                item.blockId = blockIdCounter;
-            }
-            else
-            {
-                // Correct text indentations
-                if (item.textType == ScreenTextDispRawItem.textTypeDef.normal)
-                {
-                    if (noSpaceIdx > 0)
-                    {
-                        //item.textLine = item.textLine.substring(noSpaceIdx);
-                        item.remove(0, noSpaceIdx);
-                    }
-                    if ((noSpaceIdx < item.indent) && (noSpaceIdx < item.textLine.length()) && (!MarkdownAfterListItem))
-                    {
-                        item.indent = 0;
-                        item.indentNext = 0;
-                    }
-                    if (item.indent > 0)
-                    {
-                        item.insert(0, CommonTools.stringIndent(item.indent, ' '), false);
-                        //item.textLine = stringIndent(item.indent) + item.textLine;
-                    }
-
-                    //item.textLine = "|" + item.indent + "|" + item.indentNext + "|" + MarkdownAfterListItem + "|" + item.textLine;
-                }
-
-                windowingText = windowingText.trim();
-
-                // header
-                int headerType = 0;
-                if (windowingText.startsWith("# "))
-                {
-                    headerType = 1;
-                }
-                if (windowingText.startsWith("## "))
-                {
-                    headerType = 2;
-                }
-                if (windowingText.startsWith("### "))
-                {
-                    headerType = 3;
-                }
-                if (windowingText.startsWith("#### "))
-                {
-                    headerType = 4;
-                }
-                if (windowingText.startsWith("##### "))
-                {
-                    headerType = 5;
-                }
-                if (windowingText.startsWith("###### "))
-                {
-                    headerType = 6;
-                }
-                if (headerType > 0)
-                {
-                    int idx0 = item.textLine.indexOf("# ") - headerType + 1;
-                    item.remove(idx0, headerType + 1);
-                    if (item.textLine.trim().endsWith("#") && (item.textLine.trim().contains(" ")))
-                    {
-                        int idxHash = item.textLine.length() - 1;
-                        while (item.textLine.charAt(idxHash) != '#')
-                        {
-                            idxHash--;
-                        }
-                        while (item.textLine.charAt(idxHash) != ' ')
-                        {
-                            idxHash--;
-                        }
-                        if (idxHash < (item.textLine.length() - 1))
-                        {
-                            item.remove(idxHash, -1);
-                        }
-                    }
-                    if ((headerType >= 1) && (headerType <= 2))
-                    {
-                        //textRaw.add(new ScreenTextDispRawItem(textRaw.get(idx), true));
-                        textRaw.get(idx).lineFormat = 2;
-                        //textRaw.get(idx + 1).lineFormat = 3;
-                        //idx++;
-                    }
-                    if (headerType >= 3)
-                    {
-                        textRaw.get(idx).lineFormat = 1;
-                    }
-                }
-
-                // Horizontal line
-                if ((windowingText.equals("___")) || (windowingText.equals("***")) || (windowingText.equals("---")))
-                {
-                    item.textType = ScreenTextDispRawItem.textTypeDef.line;
-                }
-                
-                // Technical data hidden as horizontal line
-                if (windowingText.startsWith("___") && windowingText.endsWith("___"))
-                {
-                    item.textType = ScreenTextDispRawItem.textTypeDef.line;
-                    if (windowingText.contains("<<<") || windowingText.contains(">>>"))
-                    {
-                        item.MessageIdx = -1;
-                        textRawItemMarkdownParseReset(false, true);
-                    }
-                    if (windowingText.contains("(((") || windowingText.contains(")))"))
-                    {
-                        item.MessageIdx = -1;
-                        item.textType = ScreenTextDispRawItem.textTypeDef.hidden;
-                    }
-                }
-                
-                // Table
-                if (windowingText.startsWith("|") && windowingText.endsWith("|") && windowingText.contains("---") && (!MarkdownTable))
-                {
-                    if (idx > 0)
-                    {
-                        if (textRaw.get(idx - 1).textLine.trim().endsWith("|"))
-                        {
-
-                            String tableLine1 = textRawItemUnWrap(idx - 1, true).trim();
-                            String tableLine2 = textRawItemUnWrap(idx, true).trim();
-                            
-                            if (tableLine1.startsWith("|") && tableLine1.endsWith("|"))
-                            {
-                                if (tableLine2.startsWith("|") && tableLine2.endsWith("|"))
-                                {
-                                    int idxRem = textRaw.get(idx).textLine.indexOf("-");
-                                    while (idxRem > 0)
+                                    if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[2], false, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, false)))
                                     {
-                                        int idxRemLen = 0;
-                                        while (textRaw.get(idx).textLine.charAt(idxRem + idxRemLen) == '-')
-                                        {
-                                            idxRemLen++;
-                                        }
-                                        textRaw.get(idx).remove(idxRem, idxRemLen);
-                                        idxRem = textRaw.get(idx).textLine.indexOf("-");
+                                        isAllowed = true;
                                     }
-                                    
-                                    textRawItemUnWrap(idx - 1, false);
-                                    int idx0 = textRawItemUnWrapIdx1;
-                                    idx -= (textRawItemUnWrapIdx2 - textRawItemUnWrapIdx1);
+                                }
 
-                                    MarkdownTable = true;
-                                    blockIdCounter++;
-                                    item.textType = ScreenTextDispRawItem.textTypeDef.table;
-                                    item.blockId = blockIdCounter;
-                                    textRaw.get(idx0).textType = item.textType;
-                                    textRaw.get(idx0).blockId = item.blockId;
+                                if (isAllowed)
+                                {
+                                    MarkdownItalic = !MarkdownItalic;
+                                    item.remove(idx0 - 2, 1);
+                                    item.setCommand(idx0 - 2, MarkdownItalic ? 21 : 20);
+                                    removedChars++;
+                                }
+                            }
+                            else
+                            {
+                                if ((CommonTools.isChar(MarkdownWindow[2], true, false, true)) && (CommonTools.isChar(MarkdownWindow[4], false, true, true)))
+                                {
+                                    isAllowed = true;
+                                }
+                                else
+                                {
+                                    if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[2], false, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, false)))
+                                    {
+                                        isAllowed = true;
+                                    }
+                                }
+
+                                if (isAllowed)
+                                {
+                                    MarkdownItalic = !MarkdownItalic;
+                                    item.remove(idx0 - 2, 1);
+                                    item.setCommand(idx0 - 2, MarkdownItalic ? 21 : 20);
+                                    removedChars++;
                                 }
                             }
                         }
                     }
+
+                    if (__EB && __QB && __E && (MarkdownWindow[2] != '`') && (MarkdownWindow[3] == '`') && (MarkdownWindow[4] != '`'))
+                    {
+                        if (!MarkdownQuote2)
+                        {
+                            if (MarkdownQuote || (MarkdownWindow[2] != '\\'))
+                            {
+                                MarkdownQuote = !MarkdownQuote;
+                                item.remove(idx0 - 2, 1);
+                                item.setCommand(idx0 - 2, MarkdownQuote ? 31 : 30);
+                                removedChars++;
+                            }
+                        }
+                    }
+                    /*if (__EB && __QB && __Q && (MarkdownWindow[2] != '$') && (MarkdownWindow[3] == '$') && (MarkdownWindow[4] != '$'))
+                    {
+                        MarkdownEquation = !MarkdownEquation;
+                        item.remove(idx0 - 2, 1);
+                        item.setCommand(idx0 - 2, MarkdownEquation ? 31 : 30);
+                        removedChars++;
+                    }*/
+
+                    // Double character
+                    if (MarkdownWindow[1] != '\\')
+                    {
+                        if (notInBlock && (((MarkdownWindow[1] != '_') && (MarkdownWindow[2] == '_') && (MarkdownWindow[3] == '_') && (MarkdownWindow[4] != '_')) || ((MarkdownWindow[1] != '*') && (MarkdownWindow[2] == '*') && (MarkdownWindow[3] == '*') && (MarkdownWindow[4] != '*'))))
+                        {
+                            boolean isAllowed = false;
+                            if (MarkdownBold)
+                            {
+                                if ((CommonTools.isChar(MarkdownWindow[1], false, true, true)) && (CommonTools.isChar(MarkdownWindow[4], true, false, true)))
+                                {
+                                    isAllowed = true;
+                                }
+                                else
+                                {
+                                    if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[1], false, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, false)))
+                                    {
+                                        isAllowed = true;
+                                    }
+                                }
+
+                                if (isAllowed)
+                                {
+                                    MarkdownBold = !MarkdownBold;
+                                    item.remove(idx0 - 3, 2);
+                                    item.setCommand(idx0 - 3, MarkdownBold ? 11 : 10);
+                                    removedChars++;
+                                    removedChars++;
+                                }
+                            }
+                            else
+                            {
+                                if ((CommonTools.isChar(MarkdownWindow[1], true, false, true)) && (CommonTools.isChar(MarkdownWindow[4], false, true, true)))
+                                {
+                                    isAllowed = true;
+                                }
+                                else
+                                {
+                                    if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[1], false, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, false)))
+                                    {
+                                        isAllowed = true;
+                                    }
+                                }
+
+                                if (isAllowed)
+                                {
+                                    MarkdownBold = !MarkdownBold;
+                                    item.remove(idx0 - 3, 2);
+                                    item.setCommand(idx0 - 3, MarkdownBold ? 11 : 10);
+                                    removedChars++;
+                                    removedChars++;
+                                }
+                            }
+                        }
+                        if (notInBlock && (MarkdownWindow[1] != '~') && (MarkdownWindow[2] == '~') && (MarkdownWindow[3] == '~') && (MarkdownWindow[4] != '~'))
+                        {
+                            item.remove(idx0 - 3, 2);
+                            removedChars++;
+                            removedChars++;
+                        }
+                        if (__QB && __E && __Q && (MarkdownWindow[1] != '$') && (MarkdownWindow[2] == '$') && (MarkdownWindow[3] == '$') && (MarkdownWindow[4] != '$'))
+                        {
+                            MarkdownEquationBlock = !MarkdownEquationBlock;
+                            if (MarkdownEquationBlock) blockIdCounter++;
+                            item.remove(idx0 - 3, 2);
+                            removedChars++;
+                            removedChars++;
+                        }
+                        if (__QB && __E && __Q && (MarkdownWindow[1] != '$') && (MarkdownWindow[2] == '\\') && ((MarkdownWindow[3] == '[') || (MarkdownWindow[3] == ']')) && (MarkdownWindow[4] != '$'))
+                        {
+                            MarkdownEquationBlock = !MarkdownEquationBlock;
+                            if (MarkdownEquationBlock) blockIdCounter++;
+                            item.remove(idx0 - 3, 2);
+                            removedChars++;
+                            removedChars++;
+                        }
+                        if (__EB && __E && __Q && (MarkdownWindow[1] != '`') && (MarkdownWindow[2] == '`') && (MarkdownWindow[3] == '`') && (MarkdownWindow[4] != '`'))
+                        {
+                            MarkdownQuote2 = !MarkdownQuote2;
+                            item.remove(idx0 - 3, 2);
+                            item.setCommand(idx0 - 3, MarkdownQuote2 ? 31 : 30);
+                            removedChars++;
+                            removedChars++;
+                        }
+                    }
+
+                    // Triple character
+                    if (MarkdownWindow[0] != '\\')
+                    {
+                        if (notInBlock && (((MarkdownWindow[0] != '*') && (MarkdownWindow[1] == '*') && (MarkdownWindow[2] == '*') && (MarkdownWindow[3] == '*') && (MarkdownWindow[4] != '*')) || ((MarkdownWindow[0] != '_') && (MarkdownWindow[1] == '_') && (MarkdownWindow[2] == '_') && (MarkdownWindow[3] == '_') && (MarkdownWindow[4] != '_'))))
+                        {
+                            boolean isAllowed = false;
+                            if (MarkdownBold && MarkdownItalic)
+                            {
+                                if ((CommonTools.isChar(MarkdownWindow[0], false, true, true)) && (CommonTools.isChar(MarkdownWindow[4], true, false, true)))
+                                {
+                                    isAllowed = true;
+                                }
+                                else
+                                {
+                                    if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[0], false, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, false)))
+                                    {
+                                        isAllowed = true;
+                                    }
+                                }
+
+                                if (isAllowed)
+                                {
+                                    MarkdownBold = !MarkdownBold;
+                                    MarkdownItalic = !MarkdownItalic;
+                                    item.remove(idx0 - 4, 3);
+                                    item.setCommand(idx0 - 4, MarkdownBold ? 11 : 10);
+                                    item.setCommand(idx0 - 4, MarkdownItalic ? 21 : 20);
+                                    removedChars += 3;
+                                }
+                            }
+                            else if ((!MarkdownBold) && (!MarkdownItalic))
+                            {
+                                if ((CommonTools.isChar(MarkdownWindow[0], true, false, true)) && (CommonTools.isChar(MarkdownWindow[4], false, true, true)))
+                                {
+                                    isAllowed = true;
+                                }
+                                else
+                                {
+                                    if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[0], false, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, false)))
+                                    {
+                                        isAllowed = true;
+                                    }
+                                }
+
+                                if (isAllowed)
+                                {
+                                    MarkdownBold = !MarkdownBold;
+                                    MarkdownItalic = !MarkdownItalic;
+                                    item.remove(idx0 - 4, 3);
+                                    item.setCommand(idx0 - 4, MarkdownBold ? 11 : 10);
+                                    item.setCommand(idx0 - 4, MarkdownItalic ? 21 : 20);
+                                    removedChars += 3;
+                                }
+                            }
+                        }
+                        if (__EB && __E && __Q && (MarkdownWindow[0] != '`') && (MarkdownWindow[1] == '`') && (MarkdownWindow[2] == '`') && (MarkdownWindow[3] == '`') && (MarkdownWindow[4] != '`'))
+                        {
+                            MarkdownQuoteBlock = !MarkdownQuoteBlock;
+                            if (MarkdownQuoteBlock) blockIdCounter++;
+                            item.textType = ScreenTextDispRawItem.textTypeDef.code;
+                            item.remove(idx0 - 4, 3);
+                            removedChars += 3;
+                        }
+                        if (__EB && __E && __Q && (MarkdownWindow[0] != '~') && (MarkdownWindow[1] == '~') && (MarkdownWindow[2] == '~') && (MarkdownWindow[3] == '~') && (MarkdownWindow[4] != '~'))
+                        {
+                            MarkdownQuoteBlock = !MarkdownQuoteBlock;
+                            if (MarkdownQuoteBlock) blockIdCounter++;
+                            item.textType = ScreenTextDispRawItem.textTypeDef.code;
+                            item.remove(idx0 - 4, 3);
+                            removedChars += 3;
+                        }
+                    }
+
+                    if (notInBlock)
+                    {
+                        // Remove escape character
+                        if (MarkdownWindow[3] == '\\')
+                        {
+                            int escapedChar = MarkdownWindow[4];
+                            if (CommonTools.isChar(escapedChar, false, false, true))
+                            {
+                                // Not remove ]\ and \[
+                                // Convert \[ and \] to $$
+                                if ((MarkdownWindow[4] != '[') && (MarkdownWindow[4] != ']'))
+                                {
+                                    item.remove(idx0 - 2, 1);
+                                    removedChars++;
+
+                                    // Modify windowing string to avoid recursively remove
+                                    if (escapedChar == '\\')
+                                    {
+                                        windowingText = CommonTools.stringSetChar(windowingText, i + 4, 'X');
+                                    }
+                                }
+                                else
+                                {
+                                    windowingText = CommonTools.stringSetChar(windowingText, i + 3, '$');
+                                    windowingText = CommonTools.stringSetChar(windowingText, i + 4, '$');
+                                }
+                            }
+                        }
+
+                        // Remove multiple spaces
+                        if ((MarkdownWindow[2] != ' ') && (MarkdownWindow[3] == ' ') && (MarkdownWindow[4] == ' '))
+                        {
+                            // Measue space sequence length
+                            int spaceCount = 0;
+                            int spaceMargin = 5;
+                            int spaceWindowOffset = 3;
+                            while ((windowingText.length() > (i + spaceWindowOffset + spaceCount + spaceMargin)) && (windowingText.charAt(i + spaceWindowOffset + spaceCount) == ' '))
+                            {
+                                spaceCount++;
+                            }
+
+                            // Remove additional spaces
+                            while (spaceCount > 1)
+                            {
+                                item.remove(idx0 - 2, 1);
+                                removedChars++;
+                                spaceCount--;
+                            }
+                        }
+                    }
                 }
-                if (windowingText.startsWith("|") && windowingText.endsWith("|") && (MarkdownTable))
+
+                if (MarkdownQuoteBlock || MarkdownEquationBlock)
                 {
-                    item.textType = ScreenTextDispRawItem.textTypeDef.table;
+                    item.textType = ScreenTextDispRawItem.textTypeDef.code;
                     item.blockId = blockIdCounter;
                 }
                 else
                 {
-                    if (MarkdownTable)
+                    // Correct text indentations
+                    if (item.textType == ScreenTextDispRawItem.textTypeDef.normal)
                     {
-                        idx = textRawTableCreate(idx - 1);
-                        MarkdownTable = false;
+                        if (noSpaceIdx > 0)
+                        {
+                            //item.textLine = item.textLine.substring(noSpaceIdx);
+                            item.remove(0, noSpaceIdx);
+                        }
+                        if ((noSpaceIdx < item.indent) && (noSpaceIdx < item.textLine.length()) && (!MarkdownAfterListItem))
+                        {
+                            item.indent = 0;
+                            item.indentNext = 0;
+                        }
+                        if (item.indent > 0)
+                        {
+                            item.insert(0, CommonTools.stringIndent(item.indent, ' '), false);
+                            //item.textLine = stringIndent(item.indent) + item.textLine;
+                        }
+
+                        //item.textLine = "|" + item.indent + "|" + item.indentNext + "|" + MarkdownAfterListItem + "|" + item.textLine;
+                    }
+
+                    windowingText = windowingText.trim();
+
+                    // header
+                    int headerType = 0;
+                    if (windowingText.startsWith("# "))
+                    {
+                        headerType = 1;
+                    }
+                    if (windowingText.startsWith("## "))
+                    {
+                        headerType = 2;
+                    }
+                    if (windowingText.startsWith("### "))
+                    {
+                        headerType = 3;
+                    }
+                    if (windowingText.startsWith("#### "))
+                    {
+                        headerType = 4;
+                    }
+                    if (windowingText.startsWith("##### "))
+                    {
+                        headerType = 5;
+                    }
+                    if (windowingText.startsWith("###### "))
+                    {
+                        headerType = 6;
+                    }
+                    if (headerType > 0)
+                    {
+                        int idx0 = item.textLine.indexOf("# ") - headerType + 1;
+                        item.remove(idx0, headerType + 1);
+                        if (item.textLine.trim().endsWith("#") && (item.textLine.trim().contains(" ")))
+                        {
+                            int idxHash = item.textLine.length() - 1;
+                            while (item.textLine.charAt(idxHash) != '#')
+                            {
+                                idxHash--;
+                            }
+                            while (item.textLine.charAt(idxHash) != ' ')
+                            {
+                                idxHash--;
+                            }
+                            if (idxHash < (item.textLine.length() - 1))
+                            {
+                                item.remove(idxHash, -1);
+                            }
+                        }
+                        if (headerType >= 1)
+                        {
+                            if (headerType < CF.ParamGetI("MarkdownHeader"))
+                            {
+                                //textRaw.add(new ScreenTextDispRawItem(textRaw.get(idx), true));
+                                textRaw.get(idx).lineFormat = 2;
+                                //textRaw.get(idx + 1).lineFormat = 3;
+                                //idx++;
+                            }
+                            else
+                            {
+                                textRaw.get(idx).lineFormat = 1;
+                            }
+                        }
+                    }
+
+                    // Horizontal line
+                    if ((windowingText.equals("___")) || (windowingText.equals("***")) || (windowingText.equals("---")))
+                    {
+                        item.textType = ScreenTextDispRawItem.textTypeDef.line;
+                    }
+
+                    // Technical data hidden as horizontal line
+                    if (windowingText.startsWith("___") && windowingText.endsWith("___"))
+                    {
+                        item.textType = ScreenTextDispRawItem.textTypeDef.line;
+                        if (windowingText.contains("<<<") || windowingText.contains(">>>"))
+                        {
+                            item.MessageIdx = -1;
+                            textRawItemMarkdownParseReset(false, true);
+                        }
+                        if (windowingText.contains("(((") || windowingText.contains(")))"))
+                        {
+                            item.MessageIdx = -1;
+                            item.textType = ScreenTextDispRawItem.textTypeDef.hidden;
+                        }
+                    }
+
+                    // Table
+                    if (windowingText.contains("|") && windowingText.contains("---") && (!MarkdownTable))
+                    {
+                        boolean isTableCandidate = true;
+                        for (int ii = 0; ii < windowingText.length(); ii++)
+                        {
+                            if (CommonTools.isChar(windowingText.charAt(ii), false, true, false))
+                            {
+                                isTableCandidate = false;
+                            }
+                        }
+                        if (isTableCandidate && (idx > 0))
+                        {
+                            if (textRaw.get(idx - 1).textLine.trim().contains("|"))
+                            {
+
+                                String tableLine1 = textRawItemUnWrap(idx - 1, true).trim();
+                                String tableLine2 = textRawItemUnWrap(idx, true).trim();
+
+                                if (tableLine1.contains("|"))
+                                {
+                                    if (tableLine2.contains("|"))
+                                    {
+                                        int idxRem = textRaw.get(idx).textLine.indexOf("-");
+                                        while (idxRem > 0)
+                                        {
+                                            int idxRemLen = 0;
+                                            while (textRaw.get(idx).textLine.charAt(idxRem + idxRemLen) == '-')
+                                            {
+                                                idxRemLen++;
+                                            }
+                                            textRaw.get(idx).remove(idxRem, idxRemLen);
+                                            idxRem = textRaw.get(idx).textLine.indexOf("-");
+                                        }
+
+                                        textRawItemUnWrap(idx - 1, false);
+                                        int idx0 = textRawItemUnWrapIdx1;
+                                        idx -= (textRawItemUnWrapIdx2 - textRawItemUnWrapIdx1);
+
+                                        MarkdownTable = true;
+                                        blockIdCounter++;
+                                        item.textType = ScreenTextDispRawItem.textTypeDef.table;
+                                        item.blockId = blockIdCounter;
+                                        textRaw.get(idx0).textType = item.textType;
+                                        textRaw.get(idx0).blockId = item.blockId;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (windowingText.contains("|") && (MarkdownTable))
+                    {
+                        item.textType = ScreenTextDispRawItem.textTypeDef.table;
+                        item.blockId = blockIdCounter;
+                    }
+                    else
+                    {
+                        if (MarkdownTable)
+                        {
+                            idx = textRawTableCreate(idx - 1);
+                            MarkdownTable = false;
+                        }
                     }
                 }
             }
+            else
+            {
+                if (item.textLine.length() > 0)
+                {
+                    if (item.textLine.startsWith("___") && item.textLine.endsWith("___"))
+                    {
+                        item.textType = ScreenTextDispRawItem.textTypeDef.line;
+                        if (item.textLine.contains("<<<") || item.textLine.contains(">>>"))
+                        {
+                            item.MessageIdx = -1;
+                            textRawItemMarkdownParseReset(false, true);
+                        }
+                        if (item.textLine.contains("(((") || item.textLine.contains(")))"))
+                        {
+                            item.MessageIdx = -1;
+                            item.textType = ScreenTextDispRawItem.textTypeDef.hidden;
+                        }
+                    }
+                    else
+                    {
+                        item.textType = ScreenTextDispRawItem.textTypeDef.code;
+                    }
+                }
+                else
+                {
+                    item.textType = ScreenTextDispRawItem.textTypeDef.normal;
+                }
+                
+                if (item.textType == ScreenTextDispRawItem.textTypeDef.code)
+                {
+                    item.blockId = blockIdCounter;
+                }
+                else
+                {
+                    blockIdCounter++;
+                }
+
+/*                String windowingText = "     " + item.textLine.substring(textLineBegin) + "     ";
+                int removedChars = 0;
+                if (MarkdownQuoteBlock || MarkdownEquationBlock)
+                {
+                    item.textType = ScreenTextDispRawItem.textTypeDef.code;
+                    item.blockId = blockIdCounter;
+                }
+*/
+
+
+            }
+                
             if (item.textType == ScreenTextDispRawItem.textTypeDef.hidden)
             {
                 textRaw.remove(idx);
@@ -818,15 +895,7 @@ public class ScreenTextDisp
         }
         catch (Exception e)
         {
-            item.textLine = "Parse error: " + e.getMessage();
-            for (int i = 0; i < e.getStackTrace().length; i++)
-            {
-                String stackItem = e.getStackTrace()[i].toString();
-                if (!stackItem.startsWith("java.base"))
-                {
-                    item.textLine = item.textLine + "|" + stackItem;
-                }
-            }
+            item.textLine = "Parse error: " + CommonTools.exceptionToStr(e);
             blockIdCounter++;
             item.blockId = blockIdCounter;
             item.textType = ScreenTextDispRawItem.textTypeDef.code;
@@ -874,6 +943,37 @@ public class ScreenTextDisp
         }
     }
     
+    void textRawItemMeasureChars(int idx, boolean reset)
+    {
+        if (reset)
+        {
+            textRaw.get(idx).textLineCharSize = null;
+        }
+        if (textRaw.get(idx).textLineCharSize != null)
+        {
+            return;
+        }
+        textRaw.get(idx).textLineCharSize = new int[textRaw.get(idx).textLine.length()];
+        textRaw.get(idx).textLineLength = textRaw.get(idx).textLine.length();
+        textRaw.get(idx).textLineCells = 0;
+        if (ConsoleInputOutput_ != null)
+        {
+            for (int i = 0; i < textRaw.get(idx).textLine.length(); i++)
+            {
+                textRaw.get(idx).textLineCharSize[i] = ConsoleInputOutput_.charSize(textRaw.get(idx).textLine.charAt(i));
+                textRaw.get(idx).textLineCells += textRaw.get(idx).textLineCharSize[i];
+            }
+        }
+        else
+        {
+            for (int i = 0; i < textRaw.get(idx).textLine.length(); i++)
+            {
+                textRaw.get(idx).textLineCharSize[i] = 1;
+                textRaw.get(idx).textLineCells++;
+            }
+        }
+    }
+    
     /**
      * Wrap text after parsing
      * @param idx 
@@ -888,10 +988,27 @@ public class ScreenTextDisp
                 textWidthWrap = textWidthWrap / 2;
             }
             int idx0 = idx;
+            int textWidthWrapLine = textWidthWrap;
             for (int i = 0; i < textRaw.get(idx).textLine.length(); i++)
             {
-                if ((textRaw.get(idx).textLine.charAt(i) != 32) && (i >= textWidthWrap))
+                int charCode = textRaw.get(idx).textLine.charAt(i);
+                if (ConsoleInputOutput_ != null)
                 {
+                    if (ConsoleInputOutput_.charSize(charCode) > 1)
+                    {
+                        if (textRaw.get(idx).lineFormat > 0)
+                        {
+                            textWidthWrapLine -= ((ConsoleInputOutput_.charSize(charCode) - 1) * 2);
+                        }
+                        else
+                        {
+                            textWidthWrapLine -= ((ConsoleInputOutput_.charSize(charCode) - 1));
+                        }
+                    }
+                }
+                if ((charCode != 32) && (i >= textWidthWrapLine))
+                {
+                    textWidthWrapLine = textWidthWrap;
                     textRaw.add(new ScreenTextDispRawItem(textRaw.get(idx), false));
                     idx++;
                     for (int ii = 0; ii < textRaw.get(idx).indent; ii++)
@@ -1268,6 +1385,7 @@ public class ScreenTextDisp
             if (((i_) >= 0) && ((i_) < textRaw.size()))
             {
                 ScreenTextDispRawItem item = textRaw.get(i_);
+                textRawItemMeasureChars(i_, false);
                 boolean ommit = false;
                 boolean ommitZero = false;
                 int ommitZeroI = 1;
@@ -1311,19 +1429,221 @@ public class ScreenTextDisp
                 else
                 {
                     ConsoleInputOutput_.setLineFormat(item.lineFormat);
+
+                    // Code line highlight begin
+                    if (item.textType == ScreenTextDispRawItem.textTypeDef.code)
+                    {
+                        displayUseCmd(31, i);
+                    }
+
+                    
+                    try
+                    {
+                        // Offset measure
+                        int writeOffsetChar = 0;
+                        int writeOffsetSize = 0;
+                        int writeOffsetPad1 = 0;
+                        int writeOffsetPad2 = 0;
+                        int writeMarginPad = 0;
+                        if (item.blockOffset > 0)
+                        {
+                            while ((writeOffsetSize < (item.blockOffset + 1)) && (writeOffsetChar < item.textLineLength))
+                            {
+                                writeOffsetSize += item.textLineCharSize[writeOffsetChar];
+                                writeOffsetChar++;
+                            }
+                            writeOffsetPad1 = writeOffsetSize - (item.blockOffset + 1);
+                            writeOffsetPad2 = writeOffsetSize - (item.blockOffset + 1);
+                        }
+
+                        boolean writeLeftScroll1 = (item.blockOffset > 0);
+                        boolean writeLeftScroll2 = (item.blockOffset > 0);
+                        int writeRightScrollPos = textWidth + 10;
+
+
+                        // Character counting
+                        int virtualCursor = 0;
+                        int textLinePointer = writeOffsetChar;
+                        int writeCount = 0;
+                        while (virtualCursor < textWidth)
+                        {
+                            int textCharSize = textLinePointer < item.textLineLength ? item.textLineCharSize[textLinePointer] : 1;
+
+                            if (writeLeftScroll1)
+                            {
+                                textCharSize = 1;
+                                writeLeftScroll1 = false;
+                            }
+                            else
+                            {
+                                if (writeOffsetPad1 > 0)
+                                {
+                                    textCharSize = 1;
+                                    writeOffsetPad1--;
+                                }
+                                else
+                                {
+                                    textLinePointer++;
+                                }
+                            }
+                            virtualCursor += textCharSize;
+                            writeCount++;
+                        }
+                        if (textLinePointer < item.textLineLength)
+                        {
+                            writeRightScrollPos = textLinePointer - 1 - writeOffsetChar + writeOffsetPad2;
+                            if (writeLeftScroll2)
+                            {
+                                writeRightScrollPos++;
+                            }
+                            
+                            textLinePointer--;
+                            int textCharSize = textLinePointer < item.textLineLength ? item.textLineCharSize[textLinePointer] : 1;
+                            virtualCursor -= textCharSize;
+                            writeMarginPad = textWidth - 1 - virtualCursor;
+                        }
+                        else
+                        {
+                            if (virtualCursor > textWidth)
+                            {
+                                writeRightScrollPos = textLinePointer - writeOffsetChar + writeOffsetPad2;
+                                writeMarginPad = virtualCursor - textWidth - 1;
+                            }
+                        }
+
+                        textLinePointer = writeOffsetChar;
+
+                        // Attributes before writing
+                        for (int iii = 0; iii < item.cmdIdx.size(); iii++)
+                        {
+                            if (item.cmdIdx.get(iii) < textLinePointer)
+                            {
+                                displayUseCmd(item.cmdTxt.get(iii), i);
+                            }
+                        }
+                    
+                        // Character writing
+                        for (int writeIterator = 0; writeIterator < writeCount; writeIterator++)
+                        {
+                            if (ommitZero)
+                            {
+                                if ((writeIterator == ommitZeroI) && ((writeCount - writeIterator) > ommitZeroI))
+                                {
+                                    ConsoleInputOutput_.setTextAttrStrike0();
+                                }
+                                if ((writeIterator > ommitZeroI) && (writeCount - writeIterator) == ommitZeroI)
+                                {
+                                    ConsoleInputOutput_.setTextAttrStrike1();
+                                }
+                            }
+
+                            char textChar = textLinePointer < item.textLineLength ? item.textLine.charAt(textLinePointer) : ' ';
+                            int useAttributesPtr = textLinePointer;
+
+                            if (writeLeftScroll2)
+                            {
+                                textChar = CommonTools.scrollL;
+                                writeLeftScroll2 = false;
+                                useAttributesPtr = -1;
+                            }
+                            else
+                            {
+                                if (writeOffsetPad2 > 0)
+                                {
+                                    textChar = ' ';
+                                    writeOffsetPad2--;
+                                    useAttributesPtr = -1;
+                                }
+                                else
+                                {
+                                    textLinePointer++;
+                                }
+                            }
+
+                            if (writeIterator >= writeRightScrollPos)
+                            {
+                                while (writeMarginPad > 0)
+                                {
+                                    ConsoleInputOutput_.printChar(' ');
+                                    writeMarginPad--;
+                                }
+                                textChar = CommonTools.scrollR;
+                            }
+
+                            // Attributes associated with the character
+                            if (useAttributesPtr >= 0)
+                            for (int iii = 0; iii < item.cmdIdx.size(); iii++)
+                            {
+                                if (item.cmdIdx.get(iii) == useAttributesPtr)
+                                {
+                                    displayUseCmd(item.cmdTxt.get(iii), i);
+                                }
+                            }
+                            
+                            
+                            ConsoleInputOutput_.printChar(textChar);
+                        }
+
+                        // Attributes after writing
+                        for (int iii = 0; iii < item.cmdIdx.size(); iii++)
+                        {
+                            if (item.cmdIdx.get(iii) > textLinePointer)
+                            {
+                                displayUseCmd(item.cmdTxt.get(iii), i);
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        ConsoleInputOutput_.printString("Display error: " + e.getMessage());
+                        //ConsoleInputOutput_.printString("Display error: " + CommonTools.exceptionToStr(e));
+                    }
+
+                    // Code line highlight end
+                    if (item.textType == ScreenTextDispRawItem.textTypeDef.code)
+                    {
+                        displayUseCmd(30, i);
+                    }
+                    
+                    
+                    /*ConsoleInputOutput_.setLineFormat(item.lineFormat);
                     if (item.textType == ScreenTextDispRawItem.textTypeDef.code)
                     {
                         displayUseCmd(31, i);
                     }
                     ii_min = item.blockOffset;
-                    ii_max = item.length();
-                    if (ii_max > (textWidth + item.blockOffset)) ii_max = (textWidth + item.blockOffset);
                     if ((item.blockOffset > 0) && (item.textLine.trim().length() > 0))
                     {
                         ConsoleInputOutput_.printChar(CommonTools.scrollL);
                         ii_min++;
                     }
-                    if ((item.length() - item.blockOffset) > textWidth)
+
+                    ii_max = item.length();
+                    int virtualCursorPos = ii_min - item.blockOffset;
+                    textWidth_ = virtualCursorPos;
+                    for (int ii = ii_min; ii < ii_max; ii++)
+                    {
+                        int virtualCharSize = item.textLineCharSize[ii];
+                        virtualCursorPos += virtualCharSize;
+                        textWidth_++;
+                        //textWidth_ -= (virtualCharSize - 1);
+                        ///f ((virtualCursorPos) >= (textWidth_ - 1))
+                        //{
+                        //    break;
+                        //}
+                        if ((virtualCursorPos) >= (textWidth))
+                        {
+                            break;
+                        }
+                    }
+                    while ((virtualCursorPos) < (textWidth))
+                    {
+                        virtualCursorPos++;
+                        textWidth_++;
+                    }
+                    
+                    if (ii_max > (textWidth_ + item.blockOffset)) ii_max = (textWidth_ + item.blockOffset);
+                    if ((item.length() - item.blockOffset) > textWidth_)
                     {
                         ii_max--;
                     }
@@ -1334,6 +1654,7 @@ public class ScreenTextDisp
                             displayUseCmd(textRaw.get(i_).cmdTxt.get(iii), i);
                         }
                     }
+                    virtualCursorPos = ii_min - item.blockOffset;
                     for (int ii = ii_min; ii < ii_max; ii++)
                     {
                         if (ommitZero)
@@ -1342,7 +1663,7 @@ public class ScreenTextDisp
                             {
                                 ConsoleInputOutput_.setTextAttrStrike0();
                             }
-                            if ((ii - item.blockOffset) == (textWidth - ommitZeroI))
+                            if ((ii - item.blockOffset) == (textWidth_ - ommitZeroI))
                             {
                                 ConsoleInputOutput_.setTextAttrStrike1();
                             }
@@ -1354,9 +1675,18 @@ public class ScreenTextDisp
                                 displayUseCmd(textRaw.get(i_).cmdTxt.get(iii), i);
                             }
                         }
-                        ConsoleInputOutput_.printChar(textRaw.get(i_).textLine.charAt(ii));
+                        if ((virtualCursorPos + textRaw.get(i_).textLineCharSize[ii]) > textWidth)
+                        {
+                            ConsoleInputOutput_.printChar('!');
+                            virtualCursorPos++;
+                        }
+                        else
+                        {
+                            ConsoleInputOutput_.printChar(textRaw.get(i_).textLine.charAt(ii));
+                            virtualCursorPos += textRaw.get(i_).textLineCharSize[ii];
+                        }
                     }
-                    if ((item.length() - item.blockOffset) > textWidth)
+                    if ((item.length() - item.blockOffset) > textWidth_)
                     {
                         if (ommitZero)
                         {
@@ -1371,10 +1701,10 @@ public class ScreenTextDisp
                         {
                             displayUseCmd(textRaw.get(i_).cmdTxt.get(iii), i);
                         }
-                    }
+                    }*/
                 }
 
-                if ((item.textType == ScreenTextDispRawItem.textTypeDef.code) || (item.textType == ScreenTextDispRawItem.textTypeDef.table))
+                /*if ((item.textType == ScreenTextDispRawItem.textTypeDef.code) || (item.textType == ScreenTextDispRawItem.textTypeDef.table))
                 {
                     int ii__ = 0;
                     if ((item.blockOffset > 0) && (item.textLine.trim().length() > 0))
@@ -1382,7 +1712,7 @@ public class ScreenTextDisp
                         ii__ = 1;
                     }
                     int ii_max_ = Math.max(ii__, ii_max - item.blockOffset);
-                    for (int ii = ii_max_; ii < textWidth; ii++)
+                    for (int ii = ii_max_; ii < textWidth_; ii++)
                     {
                         if (ommitZero)
                         {
@@ -1390,22 +1720,22 @@ public class ScreenTextDisp
                             {
                                 ConsoleInputOutput_.setTextAttrStrike0();
                             }
-                            if (ii == (textWidth - ommitZeroI))
+                            if (ii == (textWidth_ - ommitZeroI))
                             {
                                 ConsoleInputOutput_.setTextAttrStrike1();
                             }
                         }
-                        ConsoleInputOutput_.printChar(' ');
+                        ConsoleInputOutput_.printChar('^');
                     }
                     if (item.textType == ScreenTextDispRawItem.textTypeDef.code)
                     {
                         displayUseCmd(30, i);
                     }
-                }
+                }*/
 
-                if (item.textType == ScreenTextDispRawItem.textTypeDef.normal)
+                /*if (item.textType == ScreenTextDispRawItem.textTypeDef.normal)
                 {
-                    for (int ii = ii_max; ii < textWidth; ii++)
+                    for (int ii = ii_max; ii < textWidth_; ii++)
                     {
                         if (ommitZero)
                         {
@@ -1413,14 +1743,14 @@ public class ScreenTextDisp
                             {
                                 ConsoleInputOutput_.setTextAttrStrike0();
                             }
-                            if (ii == (textWidth - ommitZeroI))
+                            if (ii == (textWidth_ - ommitZeroI))
                             {
                                 ConsoleInputOutput_.setTextAttrStrike1();
                             }
                         }
                         ConsoleInputOutput_.printChar(' ');
                     }
-                }
+                }*/
 
                 if (ommit || ommitZero)
                 {
@@ -1650,19 +1980,19 @@ public class ScreenTextDisp
                     return true;
                 }
                 
-                int maxOffset = textRaw.get(displayOffset).textLine.length();
+                int maxOffset = textRaw.get(displayOffset).textLineCells;
 
                 int idx1 = displayOffset;
                 while ((idx1 >= 0) && (id == textRaw.get(idx1).blockId))
                 {
-                    maxOffset = Math.max(maxOffset, textRaw.get(idx1).textLine.length());
+                    maxOffset = Math.max(maxOffset, textRaw.get(idx1).textLineCells);
                     idx1--;
                 }
                 idx1++;
                 int idx2 = displayOffset;
                 while ((idx2 < textRaw.size()) && (id == textRaw.get(idx2).blockId))
                 {
-                    maxOffset = Math.max(maxOffset, textRaw.get(idx2).textLine.length());
+                    maxOffset = Math.max(maxOffset, textRaw.get(idx2).textLineCells);
                     idx2++;
                 }
                 idx2--;
@@ -1822,7 +2152,11 @@ public class ScreenTextDisp
     
     public static String convMarkdownToPlain(String str)
     {
-        if (convMarkdownToPlain_ == null) convMarkdownToPlain_ = new ScreenTextDisp(null, null);
+        if (convMarkdownToPlain_ == null)
+        {
+            convMarkdownToPlain_ = new ScreenTextDisp(null, null);
+            convMarkdownToPlain_.parseMarkdown = true;
+        }
         convMarkdownToPlain_.textWidth = str.length() + 10;
         convMarkdownToPlain_.clear(false);
         convMarkdownToPlain_.supplyLine(str);

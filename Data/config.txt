@@ -14,5 +14,7 @@ CellWidth=20
 WaitTimeout=30
 Log=0
 Context=0
+MarkdownHeader=4
+MarkdownDuospace=0
 TestModel=test
 
