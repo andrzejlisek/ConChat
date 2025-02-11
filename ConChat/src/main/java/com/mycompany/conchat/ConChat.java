@@ -774,31 +774,39 @@ public class ConChat
                         {
                             cmd = ScreenTextDisp_[workContext].getMessageInfo("");
                         }
+                        else
+                        {
+                            cmd = "";
+                        }
                     }
                 }
-                e1.setEngine(cmd);
-                e2.setEngine(cmd);
-                e3.setEngine(cmd);
+                
+                if (!cmd.isBlank())
+                {
+                    e1.setEngine(cmd);
+                    e2.setEngine(cmd);
+                    e3.setEngine(cmd);
 
-                if (e1.isActive)
-                {
-                    e2.isActive = false;
-                    e3.isActive = false;
-                    CF.ParamSet("Model", e1.engineName);
-                    if (configSave) CF.FileSave(CommonTools.applDir + CommonTools.configFileName);
-                }
-                else
-                {
-                    if (e2.isActive)
+                    if (e1.isActive)
                     {
+                        e2.isActive = false;
                         e3.isActive = false;
-                        CF.ParamSet("Model", e2.engineName);
+                        CF.ParamSet("Model", e1.engineName);
                         if (configSave) CF.FileSave(CommonTools.applDir + CommonTools.configFileName);
                     }
                     else
                     {
-                        CF.ParamSet("Model", e3.engineName);
-                        if (configSave) CF.FileSave(CommonTools.applDir + CommonTools.configFileName);
+                        if (e2.isActive)
+                        {
+                            e3.isActive = false;
+                            CF.ParamSet("Model", e2.engineName);
+                            if (configSave) CF.FileSave(CommonTools.applDir + CommonTools.configFileName);
+                        }
+                        else
+                        {
+                            CF.ParamSet("Model", e3.engineName);
+                            if (configSave) CF.FileSave(CommonTools.applDir + CommonTools.configFileName);
+                        }
                     }
                 }
                 
@@ -919,6 +927,19 @@ public class ConChat
 
         workContext = CF.ParamGetI("Context");
         if ((workContext < 0) || (workContext > 9)) workContext = 0;
+
+
+        // Read Markdown file for test and debug purposes
+        if (args.length > 1)
+        {
+            String ViewFileName = args[1];
+            if (CommonTools.fileGetSize(ViewFileName) > 0)
+            {
+                ScreenTextDisp_[workContext].clear(false);
+                CommonTools.fileCopy(ViewFileName, ScreenTextDisp_[workContext].fileName);
+            }
+        }
+
         
         isStandardCommand("repaint");
         
