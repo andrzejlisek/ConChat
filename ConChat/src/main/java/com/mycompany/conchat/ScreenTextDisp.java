@@ -15,6 +15,7 @@ public class ScreenTextDisp
 {
     private ConfigFile CF;
     
+    private final boolean debugClearScreen = false;
     private final boolean debugLineInfo = false;
     private boolean blockUnderline = true;
     int textWidth = 80;
@@ -119,7 +120,7 @@ public class ScreenTextDisp
             }
             
             
-            ArrayList<Integer> cellSeparator = new ArrayList<Integer>();
+            ArrayList<Integer> cellSeparator = new ArrayList<>();
             ArrayList<ScreenTextDisp> cellContent = new ArrayList<>();
             for (int i = idx1; i <= idx2; i++)
             {
@@ -139,6 +140,7 @@ public class ScreenTextDisp
                     cellItem_.remove(0, cellSeparator.get(ii - 1) + 1);
 
                     cellItem.textRaw.add(cellItem_);
+                    cellItem.supplyFinish();
                     cellContent.add(cellItem);
                 }
 
@@ -661,6 +663,22 @@ public class ScreenTextDisp
                 {
                     item.textType = ScreenTextDispRawItem.textTypeDef.code;
                     item.blockId = blockIdCounter;
+
+                    // Technical data hidden as horizontal line
+                    if (windowingText.trim().startsWith("___") && windowingText.trim().endsWith("___"))
+                    {
+                        if (windowingText.contains("<<<") || windowingText.contains(">>>"))
+                        {
+                            item.MessageIdx = -1;
+                            textRawItemMarkdownParseReset(false, true);
+                            item.textType = ScreenTextDispRawItem.textTypeDef.message;
+                        }
+                        if (windowingText.contains("(((") || windowingText.contains(")))"))
+                        {
+                            item.MessageIdx = -1;
+                            item.textType = ScreenTextDispRawItem.textTypeDef.hidden;
+                        }
+                    }
                 }
                 else
                 {
@@ -764,6 +782,7 @@ public class ScreenTextDisp
                         {
                             item.MessageIdx = -1;
                             textRawItemMarkdownParseReset(false, true);
+                            item.textType = ScreenTextDispRawItem.textTypeDef.message;
                         }
                         if (windowingText.contains("(((") || windowingText.contains(")))"))
                         {
@@ -839,7 +858,7 @@ public class ScreenTextDisp
             }
             else
             {
-                if (item.textLine.length() > 0)
+                //if (item.textLine.length() > 0)
                 {
                     if (item.textLine.startsWith("___") && item.textLine.endsWith("___"))
                     {
@@ -848,6 +867,7 @@ public class ScreenTextDisp
                         {
                             item.MessageIdx = -1;
                             textRawItemMarkdownParseReset(false, true);
+                            item.textType = ScreenTextDispRawItem.textTypeDef.message;
                         }
                         if (item.textLine.contains("(((") || item.textLine.contains(")))"))
                         {
@@ -860,10 +880,10 @@ public class ScreenTextDisp
                         item.textType = ScreenTextDispRawItem.textTypeDef.code;
                     }
                 }
-                else
+                /*else
                 {
                     item.textType = ScreenTextDispRawItem.textTypeDef.normal;
-                }
+                }*/
                 
                 if (item.textType == ScreenTextDispRawItem.textTypeDef.code)
                 {
@@ -1115,39 +1135,30 @@ public class ScreenTextDisp
             supplyLine("___(((" + t + ")))___");
         }
     }
+
+    public int getMessageLength(int unit)
+    {
+        int t = textRaw.get(displayOffset).MessageIdx;
+        if (t >= 0)
+        {
+            return textMsg.get(t).unitLength(unit);
+        }
+        return 0;
+    }
     
     /**
      * Get current message info
+     * @param engName
      * @return Message info
      */
     public String getMessageInfo(String engName)
     {
-        /*for (int i = 0; i < textMsg.size(); i++)
-        {
-            CommonTools.debugln("i=" + i);
-            CommonTools.debugln("t=" + textMsg.get(i).tokens);
-            CommonTools.debugln("m=" + textMsg.get(i).model);
-        }*/
         int t = textRaw.get(displayOffset).MessageIdx;
         if (t >= 0)
         {
             if ((!textMsg.get(t).model.isBlank()) && (!textMsg.get(t).model.trim().equals(engName)))
             {
-                if (textMsg.get(t).tokens > 0)
-                {
-                    return textMsg.get(t).tokens + "" + CommonTools.splitterInfo + "" + textMsg.get(t).model.trim();
-                }
-                else
-                {
-                    return textMsg.get(t).model.trim();
-                }
-            }
-            else
-            {
-                if (textMsg.get(t).tokens > 0)
-                {
-                    return textMsg.get(t).tokens + "";
-                }
+                return textMsg.get(t).model.trim();
             }
         }
         return "";
@@ -1211,6 +1222,13 @@ public class ScreenTextDisp
 
         if (n > 0)
         {
+            if (debugClearScreen)
+            {
+                displayOffset -= n;
+                displayAll();
+                return;
+            }
+        
             ConsoleInputOutput_.setScrollRegion(0, textHeight - 1);
             ConsoleInputOutput_.setCursorPos(0, 0);
             displayUnderline = false;
@@ -1255,6 +1273,13 @@ public class ScreenTextDisp
         }
         if (n > 0)
         {
+            if (debugClearScreen)
+            {
+                displayOffset += n;
+                displayAll();
+                return;
+            }
+
             ConsoleInputOutput_.setScrollRegion(0, textHeight - 1);
             ConsoleInputOutput_.setCursorPos(0, textHeight - 1);
             boolean blockUnderline_ = blockUnderline;
@@ -1288,6 +1313,19 @@ public class ScreenTextDisp
      */
     public void displayAll()
     {
+        if (debugClearScreen)
+        {
+            for (int i = 0; i < textHeight; i++)
+            {
+                ConsoleInputOutput_.setTextAttrReset();
+                ConsoleInputOutput_.setCursorPos(0, i);
+                ConsoleInputOutput_.setLineFormat(0);
+                for (int ii = 0; ii < textWidth; ii++)
+                {
+                    ConsoleInputOutput_.printChar(CommonTools.background);
+                }
+            }
+        }
         display(0, textHeight);
     }
 
@@ -1408,7 +1446,7 @@ public class ScreenTextDisp
                 {
                     ConsoleInputOutput_.setTextAttrStrike1();
                 }
-                if (item.textType == ScreenTextDispRawItem.textTypeDef.line)
+                if ((item.textType == ScreenTextDispRawItem.textTypeDef.line) || (item.textType == ScreenTextDispRawItem.textTypeDef.message))
                 {
                     for (int ii = 0; ii < textWidth; ii++)
                     {
@@ -1487,8 +1525,21 @@ public class ScreenTextDisp
                                 }
                             }
                             virtualCursor += textCharSize;
+                            
                             writeCount++;
+
+                            // High Surrogates (D800 - DBFF)
+                            // Low Surrogates (DC00 - DFFF)  - 1024
+                            if (textLinePointer < item.textLineLength)
+                            {
+                                int chrx = (int)item.textLine.charAt(textLinePointer);
+                                if ((chrx >= 0xDC00) && (chrx < 0xDFFF))
+                                {
+                                    writeCount++;
+                                }
+                            }
                         }
+
                         if (textLinePointer < item.textLineLength)
                         {
                             writeRightScrollPos = textLinePointer - 1 - writeOffsetChar + writeOffsetPad2;
@@ -1510,7 +1561,8 @@ public class ScreenTextDisp
                                 writeMarginPad = virtualCursor - textWidth - 1;
                             }
                         }
-
+                        
+                        
                         textLinePointer = writeOffsetChar;
 
                         // Attributes before writing
@@ -1868,6 +1920,47 @@ public class ScreenTextDisp
                 textMsg.add(item);
                 //supplyLine(item.debugText());
             }
+        }
+    }
+
+    public void supplyFinish()
+    {
+        if (textRaw.size() < 1)
+        {
+            return;
+        }
+        boolean isBold = false;
+        boolean isItalic = false;
+        boolean isQuote = false;
+        ScreenTextDispRawItem item = null;
+        for (int i = 0; i < textRaw.size(); i++)
+        {
+            item = textRaw.get(i);
+            for (int ii = 0; ii < item.cmdTxt.size(); ii++)
+            {
+                switch (item.cmdTxt.get(ii))
+                {
+                    case 11: isBold = true; break;
+                    case 10: isBold = false; break;
+                    case 21: isItalic = true; break;
+                    case 20: isItalic = false; break;
+                    case 31: isQuote = true; break;
+                    case 30: isQuote = false; break;
+                }
+            }
+        }
+        item = textRaw.get(textRaw.size() - 1);
+        if (isBold)
+        {
+            item.setCommand(-1, 10);
+        }
+        if (isItalic)
+        {
+            item.setCommand(-1, 20);
+        }
+        if (isQuote)
+        {
+            item.setCommand(-1, 30);
         }
     }
 

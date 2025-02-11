@@ -1,8 +1,8 @@
 # ConChat overview
 
-**ConChat** is the simple console application written in Java language and the main purpose is using with **OpenAI ChatGPT** and **Google Gemini** services\. The application works natively on Linux and probably will work on every Unix\-like system including MacOs X, but is not tested\. On Windows the application will not work due to Java console support limitations\. Application should work in every operating system, when standard streams are redirected to VT100\-compatible terminal\.
+**ConChat** is the simple console application written in Java language and the main purpose is using with **OpenAI ChatGPT**, **Google Gemini** and **Anthropic Claude** services\. The application works natively on Linux and probably will work on every Unix\-like system including MacOs X, but is not tested\. On Windows the application will not work due to Java console support limitations\. Application should work in every operating system, when standard streams are redirected to VT100\-compatible terminal\.
 
-**ConChat** supports both **ChatGPT** and **Gemini** chatbot service through official REST API\. These APIs is payable and requires indivual API key for use\. In order to use the application, the one of the two services is sufficient, but access to both services gives more LLM engines to use\.
+**ConChat** supports both **ChatGPT**, **Gemini** and **Claude** chatbot service through official REST API\. These APIs is payable and requires indivual API key for use\. In order to use the application, the one of the two services is sufficient, but access to both services gives more LLM engines to use\.
 
 # Configuration file
 
@@ -11,8 +11,9 @@ Before the first use, you have to set the API key in the configuration file and 
 The configuration file **config\.txt** has the following options, the italic options can be changed during application session:
 
 
-* **KeyGpt** \- API key for OpenAI ChatGPT\.
-* **KeyGemini** \- API key for Google Gemini\.
+* **KeyGpt** \- API key for **OpenAI ChatGPT**\.
+* **KeyGemini** \- API key for **Google Gemini**\.
+* **KeyClaude** \- API key for **Anthropic Claude**\.
 * **Favorite** \- Model favorite list separated with semicolon\.
 * ***Model*** \- Currently selected model name\.
 * ***FieldSize*** \- Minimum field size for input text in text lines\. The real current field size depends on current console resolution and can be increased by 1\.
@@ -22,21 +23,25 @@ The configuration file **config\.txt** has the following options, the italic opt
 * ***TopP*** \- The **nucleus sampling** token probability threshold from **0** to **100**\.
   * The **0** value causes almost deterministic chatbot working\.
   * Some value greater than **100** is allowed, but means, that nucleus sampling is not provided and the chatbot will use default temperature\.
-* **TopK** \- The word set size limit for answer generation, the parameter is used for **Google Gemini** only\. The value can be:
+* **TopK** \- The word set size limit for answer generation\. The value can be:
   * **0** \- Parameter is not used\.
   * **From 1 to unlimited high number** \- Parameter is used with value\. The 1 value may cause chaotic answer generation while used high **Temperature** and high **TopP**\.
 * **PresencePenalty** and **FrequencyPenalty** \- Obstructing token repeat in generated answer based on token presence and frequency respectively\. The value is from **0** to **100**\.
   * The **0** means no obstruction \(no penalty\)\.
   * Some value greater than **100** is allowed, but means, that this parameter is not provided and the chatbot will use default obstructions\.
-* ***HistoryTokens*** \- Maximum number of history tokens contained in last history messages \(questions and answers\) sent to chatbot everytime you writes the question\. The **0** value means unlimited history size, but chatbot engine may have own limit\.
-* ***AnswerTokens*** \- Maximum number of answer tokens\. Limited number may limit potential usage cost, but may cause incomplete answer\. The **0** values means unlimited answer size\.
+* ***HistoryUnit*** \- The unit to measure the history messages for sent to the chatbot server:
+  * **0** \- Words\.
+  * **1** \- Characters\.
+  * **2** \- Messages\.
+* ***HistoryLimit*** \- Maximum number of history words/characters/messages contained in last history messages \(questions and answers\) sent to chatbot everytime you writes the question\. The **0** value means unlimited history size, but chatbot engine may have own limit\.
+* ***AnswerLimit*** \- Maximum number of answer tokens\. Limited number may limit potential usage cost, but may cause incomplete answer\. The **0** values means unlimited answer size\.
 * ***WaitTimeout*** \- Waiting for answer timeout in seconds\.
-* ***CellWidth*** \- Minimum cell width in table, when the answer contains any **Markown** formatted table\. There is the size used for maximum space size for word wrapping\.
-* ***Log*** \- The **http\.txt** log file option:
+* **Log** \- The **http\.txt** log file option:
   * **0** \- Do not create the log\.
   * **1** \- Append every request and response to log file, do not clear the file\.
   * **2** \- Append every request and response to log file, clear the log file at the **ConChat** startup\.
 * ***Context*** \- Number of startup chat context\. **ConChat** contains 10 chat contexts numbered from 0 to 9\.
+* ***MarkdownCellWidth*** \- Minimum cell width in table, when the answer contains any **Markown** formatted table\. There is the size used for maximum space size for word wrapping\.
 * ***MarkdownHeader*** \- The first header level, which will be indicated by smaller font\.
 * ***MarkdownDuospace*** \- Measure the non\-ASCII characters in order to propertly display using the duo space fonts in terminal:
   * **0** \- Assume, thal all characters are the single cell width\. Use this in the following cases:
@@ -80,15 +85,14 @@ In both states, everytime you can press these keys:
 
 
 * **Enter** \- Depends on input text, command words are case insensitive:
-  * **Blank field** \- Switch between the two states\.
+  * **Blank field** \- Switch between the two states \(operation and configuration\)\.
   * **"clear"** \- Clear the current context \(conversation\)\.
   * **"exit"** \- Exit from **ConChat**\.
   * **"repaint"** \- Repaint the interface after resize\. This command also clears all contextes and reloads them from files\. Use the command even if you change the font typeface in console/terminal application when the contexts contains special characters, which can be double width, like CJK characters\.
   * **"copy"** \- Copy the current message \(in the middle of the screen\) to edit field\. Then, you can edit this question before send\.
-  * **"counterreset"** \- Reset the tonen counter for the currently selected model\.
+  * **"counterreset"** \- Reset the token counter for the currently selected model\.
   * **"archive"** \- Archive the current context to file\. The physical file will by named by **contextXYZ\.txt**, where XYZ is current date/time stamp written by 14 digits\.
   * **"archdelete"** \- Delete last created or restored archive, which is highlighted\.
-  * **"markdowntest"** \- Switch into the raw text display instead of the **Markdown** text\. Send one more time for returning switch into standard display\. Usable for debugging **Markdown** display glitches\.
   * **"markdownheader?"** \- Use the digit from **1** to **7** instead of **?** character\. Changes the header display threshold as following examples:
     * **"markdownheader1"** \- Displays all header levels using smaller font\.
     * **"markdownheader2"** \- Displays the first leves using larger font and other header levels using smaller font\.
@@ -113,17 +117,9 @@ The chatbot actually works as stateless machine, so everytime, if you send furth
 
 The messages, which are ommited due to **0** tokens length or exceeding history tokens limit are indicated by strikethrough line at the screen edges\.
 
-In order to check the message size in tokens, you can press the **Insert** or **F12** key\. The message information will be written into the input text field:
-
-
-* Message length in tokens if the length is saved\.
-* The model name if the model differs than the current model, the model name will also be written\.
-
-The information will remind, which model you was used within the current conversations\. If toy get the lessage length only, the current model is the same as used in the talk\.
-
 Everytime, if you send the question, the chat server sends the number of tokens for question and answer\. These numbers are stored in the context and erroneous messages including questions without answer, are not sent to server\. These messages are indicated by strikethrough mark in the first and last text column and will be permanently ommited\.
 
-You cam modify the conversation outside the **ConChat**\. Simply, modify the file associaded to the context, for instance, the **context3\.txt** file for context **3**\. After modification, restart the **ConChat** or rexecure resize command by write **resize** word and press **Enter** key\.
+You cam modify the conversation outside the **ConChat**\. Simply, modify the file associaded to the context, for instance, the **context3\.txt** file for context **3**\. After modification, restart the **ConChat** or execute **repaint** command by write **repaint** word and press **Enter** key\.
 
 ## Configuration state
 
@@ -133,17 +129,13 @@ In this stare, there are displayed following information:
 
 
 * Number of current context\.
-* Number of messages and tokens contained in current context, every number consists of two parts:
-  * **Before slash** \- The number of tokens/messages, which will be sent to the chatbot when you send next question\. The manual message ommision and history token limit affects the number\.
-  * **After slash** \- The number of all tokens/messages in this context\.
-* Word commands, which works in both states\.
-* The configuration parameter and one\-letter commands for change this parameters\.
+* Name of currently selected model\.
+* Message statistics consisting of current message, history messages and context messages\. The highlighted unit indicated the unit used to count history messages\. You can change the unit by **historyunit** command\. If the current model differs from the model used to process the message, the model name assiciated with the message is displayed\.
+* Frequently used word commands, which works in both states\.
+* Frequently used configuration parameters and one\-letter commands for change this parameters\.
 * List of favorite models, which are available and included in **Favorite** parameter in **config\.txt** file\. These models are numbered for ease change\.
 * List of archive context files treated as further items on favorite model list\.
-* List of available models with token counter\. These models are in **models\.txt** file\. The counter consists of three numbers:
-  * **History** token counter
-  * **Question** token counter
-  * **Answer** token counter
+* List of available models with token counter\. These models are in **models\.txt** file\. The counter consists of input tokens and output tokens\.
 
 The one\-letter commands consists of single letter \(case insensitive\) and one number\. For instance, in order to set the temperature to **100**, input **t100** and press **Enter**\. In order to set waiting timeout to one minute \(60 seconds\), input **w60** and press Enter\. The value will be automatically updated\.
 
@@ -176,17 +168,18 @@ The bolded character will be measured at the first occurence after application s
 
 # Available model list
 
-Both **OpenAI ChatGPT** and **Google Gemini** provides several models\. The model list are stored in the **models\.txt** file\. You can edit or update the model list\.
+The **OpenAI ChatGPT**, **Google Gemini** and **Anthropic Claude** provides several models\. The model list are stored in the **models\.txt** file\. You can edit or update the model list\.
 
 If you want to edit the model silt, siply open the file in the plain text editor\. Every model is in separated line and is preceeded with one of the characters:
 
 
-* 1 \- Model to use with **OpenAI ChatGPT**\.
-* 2 \- Model to use with **Google Gemini**\.
+* **1** \- Model to use with **OpenAI ChatGPT**\.
+* **2** \- Model to use with **Google Gemini**\.
+* **3** \- Model to use with **Anthropic Claude**\.
 
 After editing the file, you hane to re\-run the **ConChat**\.
 
-In order to automatically update, close the **ConChat** application, remove the **models\.txt** file and run the apllication\. At the startup, the aplication will download the model list\. If the **KeyGpt** or **KeyGemini** parameter in **config\.txt** is not blank, **ConChat** assumes, that you use this service and tries to download model list\. If there is error due to incorrect API key, in the model list, there will be dummy models with **error** word in name and raw error message\. In this case, the model list will not stored\.
+In order to automatically update, close the **ConChat** application, remove the **models\.txt** file and run the apllication\. At the startup, the aplication will download the model list\. If the **KeyGpt** or **KeyGemini** or **KeyClaude** parameter in **config\.txt** is not blank, **ConChat** assumes, that you use this service and tries to download model list\. If there is error due to incorrect API key, in the model list, there will be dummy models with **error** word in name and raw error message\. In this case, the model list will not stored\.
 
 There are two scenarios depending on the **TestModel** parameter in **config\.txt** file:
 

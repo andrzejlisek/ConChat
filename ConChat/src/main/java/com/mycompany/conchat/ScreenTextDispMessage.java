@@ -19,6 +19,60 @@ public class ScreenTextDispMessage
     public boolean isAnswer;
     public boolean ommit;
     
+
+    public int unitLength(ConfigFile CF_)
+    {
+        return unitLength(CF_.ParamGetI("HistoryUnit"));
+    }
+
+    public int unitLength(int unit)
+    {
+        switch (unit)
+        {
+            case 0:
+                {
+                    int wordCount = 0;
+                    boolean wordChar = false;
+                    for (int i = 0; i < message.length(); i++)
+                    {
+                        if (CommonTools.isChar(message.charAt(i), false, true, true))
+                        {
+                            if (!wordChar)
+                            {
+                                wordCount++;
+                                wordChar = true;
+                            }
+                        }
+                        else
+                        {
+                            if (wordChar)
+                            {
+                                wordChar = false;
+                            }
+                        }
+                    }
+                    return wordCount;
+                }
+            case 1:
+                {
+                    int charCount = 0;
+                    for (int i = 0; i < message.length(); i++)
+                    {
+                        if (CommonTools.isChar(message.charAt(i), false, true, true))
+                        {
+                            charCount++;
+                        }
+                    }
+                    return charCount;
+                }
+            case 2:
+                return 1;
+            case 3:
+                return tokens;
+        }
+        return 0;
+    }
+    
     public ScreenTextDispMessage(boolean isAnswer_, String message_, int tokens_, String model_)
     {
         isAnswer = isAnswer_;

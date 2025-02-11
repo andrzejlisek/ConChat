@@ -13,7 +13,7 @@ import java.util.ArrayList;
  */
 public class ScreenTextDispRawItem
 {
-    enum textTypeDef { normal, code, line, table, hidden };
+    enum textTypeDef { normal, code, line, table, message, hidden };
     
     int lineNumber;
     int MessageIdx;
@@ -237,6 +237,16 @@ public class ScreenTextDispRawItem
         }
         cmdIdx.add(idx);
         cmdTxt.add(txt);
+    }
+    
+    public void debugCmds()
+    {
+        textLine = textLine + "{";
+        for (int i = 0; i < cmdIdx.size(); i++)
+        {
+            textLine = textLine + "[" + cmdIdx.get(i) + "=" + cmdTxt.get(i) + "]";
+        }
+        textLine = textLine + "}";
     }
     
     public void unWrap(ScreenTextDispRawItem src)

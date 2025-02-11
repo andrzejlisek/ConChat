@@ -43,3 +43,8 @@
 2gemini-exp-1206
 2gemini-pro
 2learnlm-1.5-pro-experimental
+3claude-3-5-haiku-20241022
+3claude-3-5-sonnet-20240620
+3claude-3-5-sonnet-20241022
+3claude-3-haiku-20240307
+3claude-3-opus-20240229

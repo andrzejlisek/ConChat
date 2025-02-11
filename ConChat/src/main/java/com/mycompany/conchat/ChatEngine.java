@@ -37,19 +37,17 @@ public class ChatEngine
     
     /**
      * Add token number to token counters
-     * @param H History tokens
-     * @param Q Question tokens
-     * @param A Answer tokens
+     * @param I Input tokens
+     * @param O Output tokens
      */
-    void tokenCount(int H, int Q, int A, boolean talkTestMode)
+    void tokenCount(int I, int O, boolean talkTestMode)
     {
         if (talkTestMode)
         {
             return;
         }
-        CFC.ParamSet(engineName + "-h", CFC.ParamGetI(engineName + "-h") + H);
-        CFC.ParamSet(engineName + "-q", CFC.ParamGetI(engineName + "-q") + Q);
-        CFC.ParamSet(engineName + "-a", CFC.ParamGetI(engineName + "-a") + A);
+        CFC.ParamSet(engineName + "-i", CFC.ParamGetI(engineName + "-i") + I);
+        CFC.ParamSet(engineName + "-o", CFC.ParamGetI(engineName + "-o") + O);
         CFC.FileSave(CommonTools.applDir + CommonTools.counterFileName);
     }
     
@@ -70,7 +68,7 @@ public class ChatEngine
     public static int contextBeginIdx(ArrayList<ScreenTextDispMessage> ctx, ConfigFile CF_)
     {
         int idx = 0;
-        int tokenLimit = CF_.ParamGetI("HistoryTokens");
+        int tokenLimit = CF_.ParamGetI("HistoryLimit");
         if (tokenLimit > 0)
         {
             idx = ctx.size();
@@ -79,7 +77,7 @@ public class ChatEngine
                 idx--;
                 if (!ctx.get(idx).ommit)
                 {
-                    tokenLimit -= ctx.get(idx).tokens;
+                    tokenLimit -= ctx.get(idx).unitLength(CF_);
                 }
             }
             if (tokenLimit < 0)
@@ -121,7 +119,7 @@ public class ChatEngine
         }
     }
     
-    public String webRequest(String urlAddr, String apiKey, String requestBody)
+    public String webRequest(String urlAddr, String headerParameters, String requestBody)
     {
         try
         {
@@ -129,10 +127,31 @@ public class ChatEngine
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder();
             requestBuilder = requestBuilder.uri(URI.create(urlAddr));
             requestBuilder = requestBuilder.header("Content-Type", "application/json");
-            if (!apiKey.isEmpty())
+            
+            
+            if (!headerParameters.isEmpty())
             {
-                requestBuilder = requestBuilder.header("Authorization", "Bearer " + apiKey);
+                char headerSplitter = headerParameters.charAt(headerParameters.length() - 1);
+                int headerStep = 0;
+                while (headerStep < headerParameters.length())
+                {
+                    int header1 = headerParameters.indexOf(headerSplitter, headerStep);
+                    int header2 = headerParameters.indexOf(headerSplitter, header1 + 1);
+                    if ((header1 > headerStep) && (header2 > header1))
+                    {
+                        String headerKey = headerParameters.substring(headerStep, header1);
+                        String headerVal = headerParameters.substring(header1 + 1, header2);
+                        requestBuilder = requestBuilder.header(headerKey, headerVal);
+                        headerStep = header2 + 1;
+                    }
+                    else
+                    {
+                        headerStep = headerParameters.length();
+                    }
+                }
             }
+
+            
             if (requestBody.isEmpty())
             {
                 requestBuilder = requestBuilder.GET();

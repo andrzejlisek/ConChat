@@ -107,10 +107,10 @@ public class ChatEngineGemini extends ChatEngine
             if (config == null) config = new JSONObject();
             config.put("frequencyPenalty", ((double)CF.ParamGetI("FrequencyPenalty")) / 100.0);
         }
-        if ((!testMode) && (CF.ParamGetI("AnswerTokens") > 0))
+        if ((!testMode) && (CF.ParamGetI("AnswerLimit") > 0))
         {
             if (config == null) config = new JSONObject();
-            config.put("maxOutputTokens", CF.ParamGetI("AnswerTokens"));
+            config.put("maxOutputTokens", CF.ParamGetI("AnswerLimit"));
         }
         if (config != null)
         {
@@ -134,10 +134,11 @@ public class ChatEngineGemini extends ChatEngine
                     }
                 }
                 String answer = answer_.toString().trim();
-                tokensI = jsonResponse.getJSONObject("usageMetadata").getInt("promptTokenCount") - ctxTokens;
-                if (tokensI < 1) tokensI = 1;
+                tokensI = jsonResponse.getJSONObject("usageMetadata").getInt("promptTokenCount");
                 tokensO = jsonResponse.getJSONObject("usageMetadata").getInt("candidatesTokenCount");
-                tokenCount(ctxTokens, tokensI, tokensO, testMode);
+                tokenCount(tokensI, tokensO, testMode);
+                tokensI -= ctxTokens;
+                if (tokensI < 1) tokensI = 1;
                 return answer;
             }
             catch (Exception e)

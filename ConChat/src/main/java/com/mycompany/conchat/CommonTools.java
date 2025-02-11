@@ -77,7 +77,7 @@ public class CommonTools
     /**
      * Token counter size in characters
      */
-    static int counterSize = 6;
+    static int counterSize = 10;
     
     static void debug(String str)
     {

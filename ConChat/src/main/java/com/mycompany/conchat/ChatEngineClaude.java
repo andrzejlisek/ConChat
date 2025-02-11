@@ -14,16 +14,16 @@ import org.json.JSONObject;
  *
  * @author xxx
  */
-public class ChatEngineGpt extends ChatEngine
+public class ChatEngineClaude extends ChatEngine
 {
     String chatSystemRole = "";
 
-    public ChatEngineGpt(ConfigFile CF_, ConfigFile CFC_)
+    public ChatEngineClaude(ConfigFile CF_, ConfigFile CFC_)
     {
         super(CF_, CFC_);
-        apiKey = CF.ParamGetS("KeyGpt");
+        apiKey = CF.ParamGetS("KeyClaude");
     }
-    
+
     @Override
     public ArrayList<String> getEngines(boolean download)
     {
@@ -32,14 +32,13 @@ public class ChatEngineGpt extends ChatEngine
             engineList.clear();
             if (!apiKey.isBlank())
             {
-                String response = webRequest("https://api.openai.com/v1/models", "Authorization|Bearer " + apiKey + "|", "");
+                String response = webRequest("https://api.anthropic.com/v1/models", "anthropic-version|2023-06-01|X-API-Key|" + apiKey + "|", "");
                 if (!response.startsWith("ERROR"))
                 {
-                    JSONObject jsonResponse = new JSONObject(response);
-                    int L = jsonResponse.getJSONArray("data").length();
-                    for (int i = 0; i < L; i++)
+                    JSONArray answerList = (new JSONObject(response)).getJSONArray("data");
+                    for (int i = 0; i < answerList.length(); i++)
                     {
-                        engineList.add(jsonResponse.getJSONArray("data").getJSONObject(i).getString("id"));
+                        engineList.add(answerList.getJSONObject(i).getString("id"));
                     }
                     Collections.sort(engineList);
                 }
@@ -48,7 +47,7 @@ public class ChatEngineGpt extends ChatEngine
                     String[] response_ = response.split("\n");
                     for (int i = 0; i < response_.length; i++)
                     {
-                        engineList.add("gpt-error-" + CommonTools.intToStr(i, 3) + "    " + response_[i]);
+                        engineList.add("claude-error-" + CommonTools.intToStr(i, 3) + "    " + response_[i]);
                     }
                 }
             }
@@ -63,32 +62,45 @@ public class ChatEngineGpt extends ChatEngine
         tokensO = 0;
         tokensE = engineName;
         int ctxTokens = 0;
-        String apiEndpoint = "https://api.openai.com/v1/chat/completions";
-
         JSONObject requestBody = new JSONObject();
         requestBody.put("model", engineName);
         if ((!testMode) && CommonTools.isWithinRange(CF.ParamGetI("Temperature"), 0, 200))
         {
-            requestBody.put("temperature", ((double)CF.ParamGetI("Temperature")) / 100.0);       // 1.0   0.0 - 2.0
+            requestBody.put("temperature", ((double)CF.ParamGetI("Temperature")) / 100.0);
         }
         if ((!testMode) && CommonTools.isWithinRange(CF.ParamGetI("TopP"), 0, 100))
         {
-            requestBody.put("top_p", ((double)CF.ParamGetI("TopP")) / 100.0);             // 1.0   0.0 - 1.0
+            requestBody.put("top_p", ((double)CF.ParamGetI("TopP")) / 100.0);
         }
-        if ((!testMode) && CommonTools.isWithinRange(CF.ParamGetI("FrequencyPenalty"), 0, 100))
+        if ((!testMode) && (CF.ParamGetI("TopK") >= 1))
         {
-            requestBody.put("frequency_penalty", ((double)CF.ParamGetI("FrequencyPenalty")) / 100.0); // 0.0   0.0 - 2.0
+            requestBody.put("top_k", CF.ParamGetI("TopK"));
         }
-        if ((!testMode) && CommonTools.isWithinRange(CF.ParamGetI("PresencePenalty"), 0, 100))
+        if ((!testMode) && (CF.ParamGetI("AnswerLimit") > 0))
         {
-            requestBody.put("presence_penalty", ((double)CF.ParamGetI("PresencePenalty")) / 100.0);  // 0.0   0.0 - 2.0
+            requestBody.put("max_tokens", CF.ParamGetI("AnswerLimit"));
+        }
+        else
+        {
+            // HARDCODING The max_tokens is required parameter
+            if (engineName.contains("claude-3-5-"))
+            {
+                requestBody.put("max_tokens", 8192);
+            }
+            else
+            {
+                if (engineName.contains("claude-3-"))
+                {
+                    requestBody.put("max_tokens", 4096);
+                }
+            }
+        }
+        if (!chatSystemRole.isEmpty())
+        {
+            requestBody.put("system", chatSystemRole);
         }
 
         JSONArray messages = new JSONArray();
-        if (!chatSystemRole.isEmpty())
-        {
-            messages.put(new JSONObject().put("role", "system").put("content", chatSystemRole));
-        }
         for (int i = contextBeginIdx(ctx, CF); i < ctx.size(); i++)
         {
             if ((ctx.get(i).tokens > 0) && (!ctx.get(i).ommit))
@@ -99,31 +111,32 @@ public class ChatEngineGpt extends ChatEngine
         }
         messages.put(new JSONObject().put("role", "user").put("content", msg));
         requestBody.put("messages", messages);
-        if ((!testMode) && (CF.ParamGetI("AnswerLimit") > 0))
-        {
-            requestBody.put("max_tokens", CF.ParamGetI("AnswerLimit"));
-        }
 
-        String response = webRequest(apiEndpoint, "Authorization|Bearer " + apiKey + "|", requestBody.toString());
-
+        String response = webRequest("https://api.anthropic.com/v1/messages", "anthropic-version|2023-06-01|X-API-Key|" + apiKey + "|", requestBody.toString());
         if (!response.startsWith("ERROR"))
         {
             try
             {
                 JSONObject jsonResponse = new JSONObject(response);
-                String answer = jsonResponse.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content").trim();
-                tokensI = jsonResponse.getJSONObject("usage").getInt("prompt_tokens");
-                tokensO = jsonResponse.getJSONObject("usage").getInt("completion_tokens");
+                JSONArray answerObj = jsonResponse.getJSONArray("content");
+                StringBuilder answer_ = new StringBuilder();
+                for (int i = 0; i < answerObj.length(); i++)
+                {
+                    answer_.append(answerObj.getJSONObject(i).getString("text"));
+                }
+                String answer = answer_.toString().trim();
+                tokensI = jsonResponse.getJSONObject("usage").getInt("input_tokens");
+                tokensO = jsonResponse.getJSONObject("usage").getInt("output_tokens");
                 tokenCount(tokensI, tokensO, testMode);
                 tokensI -= ctxTokens;
                 if (tokensI < 1) tokensI = 1;
                 return answer;
             }
-            catch (Exception ee)
+            catch (Exception e)
             {
                 tokensI = 0;
                 tokensO = 0;
-                return ScreenTextDisp.convMessageToMarkdown(ee.getMessage() + "\n" + CommonTools.jsonFormat(response));
+                return ScreenTextDisp.convMessageToMarkdown(e.getMessage() + "\n" + CommonTools.jsonFormat(response));
             }
         }
         else
