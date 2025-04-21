@@ -16,6 +16,7 @@ The configuration file **config\.txt** has the following options, the italic opt
 * **KeyClaude** \- API key for **Anthropic Claude**\.
 * **Favorite** \- Model favorite list separated with semicolon\.
 * ***Model*** \- Currently selected model name\.
+* ***Hint0***, ***Hint1***, ***Hint2***,\.\. ***Hint9*** \- System hint used with every question within the context numbered from 0 to 9\.
 * ***FieldSize*** \- Minimum field size for input text in text lines\. The real current field size depends on current console resolution and can be increased by 1\.
 * ***Temperature*** \- Probability usage by chatbot from **0** to **200** called as **temperature**\.
   * The **0** value causes almost deterministic chatbot working\.
@@ -100,9 +101,11 @@ In both states, everytime you can press these keys:
   * **"clear"** \- Clear the current context \(conversation\)\.
   * **"exit"** \- Exit from **ConChat**\.
   * **"repaint"** \- Repaint the interface after resize\. This command also clears all contextes and reloads them from files\. Use the command even if you change the font typeface in console/terminal application when the contexts contains special characters, which can be double width, like CJK characters\.
-  * **"copy"** \- Copy the current message \(in the middle of the screen\) to edit field\. Then, you can edit this question before send\. There are two possible cases:
-    * **Question is modified** \- After **Enter** key, the question will be send as next question\.
-    * **Question is not modified** \- After **Enter** key, the question will be send without repeating and without answers after last occurence of this question\.
+  * **"copy"** \- Depends on current work state:
+    * **Operation state** \- Copy the current message \(in the middle of the screen\) to edit field\. Then, you can edit this question before send\. There are two possible cases:
+      * **Question is modified** \- After **Enter** key, the question will be send as next question\.
+      * **Question is not modified** \- After **Enter** key, the question will be send without repeating and without answers after last occurence of this question\.
+    * **Configuration state** \- Copy the current system hint of the context to edit field\.
   * **"counter"** \- Switch between token counter and estimated token cost\.
   * **"counterreset"** \- Reset the token counter for the currently selected model\.
   * **"pricei?"** \- Set the price per million input tokens\. The price is multiplied by ten thousand\. In you want to set the price to **1\.2345**, input **pricei12345**\.
@@ -146,6 +149,7 @@ In this stare, there are displayed following information:
 
 * Number of current context\.
 * Name of currently selected model\.
+* System hint text\.
 * Message statistics consisting of current message, history messages and context messages\. The highlighted unit indicated the unit used to count history messages\. You can change the unit by **historyunit** command\. If the current model differs from the model used to process the message, the model name assiciated with the message is displayed\.
 * Frequently used word commands, which works in both states\.
 * Frequently used configuration parameters and one\-letter commands for change this parameters\.
@@ -165,6 +169,55 @@ There are two ways to change the current model or restore archive context:
 * Input the model name or archive context name and press **Enter**\.
 
 The currently selected model is highlighted\. The archive context will be highlighted after restored\.
+
+## System hint
+
+All three suppliers \(OpenAI, Google, Claude\) suports the system hint feature, called also as system role or system instruction\. You can change the system hint everytime, in either operation or configuration state, the hint is associated with conversation context\.
+
+To change the hint, use the tilde or grave accent as first character and do not use the same character within hint text\.
+
+There is examples for set hint:
+
+```
+`Prease format answer usin Markdown language.
+~Please write long description including history context.
+```
+
+The examples are not hints, due to hint character repeat, this text will be treated as regular question or model name, depending on current work state:
+
+```
+~Use the ~ character as logic negation.
+`I am programmer in `C++` language.
+```
+
+These hints can be written as following and will be interpreted as hint change command:
+
+```
+`Use the ~ character as logic negation.
+~I am programmer in `C++` language.
+```
+
+Fo clear the hint, jus use the single tilde or grave accent:
+
+```
+~
+`
+```
+
+The current hint is visible in configuration state and is common for all models\.
+
+You can copy the hit from one context to another context\. On order to copy, write tilde or accent followed by two digits\. The first digit is source context \(copy from\), the second digit is target context \(copy to\)\.
+
+In order to copy the hint from context 6 to context 8, write one of following command and press Enter:
+
+```
+`68
+~68
+```
+
+The current context does not matter in copy action\.
+
+You can corrent the hint using the **copy** command within configuration state\. The current hint will be written in the edit field, preceeded by tilde\. Make the appropriate correction and press Enter to change the current hint\.
 
 # Group conversation with several models
 

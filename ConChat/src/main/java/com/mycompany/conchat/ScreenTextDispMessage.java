@@ -35,7 +35,7 @@ public class ScreenTextDispMessage
                     boolean wordChar = false;
                     for (int i = 0; i < message.length(); i++)
                     {
-                        if (CommonTools.isChar(message.charAt(i), false, true, true))
+                        if (CommonTools.isChar(message.charAt(i), false, true, true, true))
                         {
                             if (!wordChar)
                             {
@@ -58,7 +58,7 @@ public class ScreenTextDispMessage
                     int charCount = 0;
                     for (int i = 0; i < message.length(); i++)
                     {
-                        if (CommonTools.isChar(message.charAt(i), false, true, true))
+                        if (CommonTools.isChar(message.charAt(i), false, true, true, true))
                         {
                             charCount++;
                         }

@@ -315,7 +315,6 @@ public class ConsoleInputOutput
 
     void screenLineClear()
     {
-        setCursorPos(0, 0);
         setTextAttrReset();
         printEscString("[0K");
     }
@@ -422,13 +421,11 @@ public class ConsoleInputOutput
     {
         if ((first < 0) || (last < 0))
         {
-            System.out.print("\033");
             printEscString("[r");
             return;
         }
         scrollRegionFirst = first;
         scrollRegionLast = last;
-        System.out.print("\033");
         printEscString("[" + (first + 1) + ";" + (last + 1) + "r");
     }
     
@@ -474,7 +471,8 @@ public class ConsoleInputOutput
         charSizeMap.put((int)CommonTools.scrollL, 1);
         charSizeMap.put((int)CommonTools.scrollR, 1);
         charSizeMap.put((int)CommonTools.background, 1);
-        charSizeMap.put((int)CommonTools.splitter, 1);
+        charSizeMap.put((int)CommonTools.splitterMsg, 1);
+        charSizeMap.put((int)CommonTools.splitterText, 1);
         charSizeMap.put((int)CommonTools.splitterInfo, 1);
     }
     

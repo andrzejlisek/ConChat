@@ -1,5 +1,6 @@
 com/mycompany/conchat/ChatEngine.class
 com/mycompany/conchat/ChatEngineClaude.class
+com/mycompany/conchat/TalkObject.class
 com/mycompany/conchat/ConsoleInputOutput.class
 com/mycompany/conchat/ScreenTextInput.class
 com/mycompany/conchat/ConChat.class

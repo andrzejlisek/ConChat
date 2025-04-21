@@ -16,10 +16,19 @@ import org.json.JSONObject;
  */
 public class ChatEngineGemini extends ChatEngine
 {
+    public ChatEngineGemini(ChatEngine __)
+    {
+        super(__.CF, __.CFC);
+        apiKey = CF.ParamGetS("KeyGemini");
+        objType = 2;
+        CloneObj(__);
+    }
+
     public ChatEngineGemini(ConfigFile CF_, ConfigFile CFC_)
     {
         super(CF_, CFC_);
         apiKey = CF.ParamGetS("KeyGemini");
+        objType = 2;
     }
 
     @Override
@@ -36,7 +45,7 @@ public class ChatEngineGemini extends ChatEngine
                     JSONArray answerList = (new JSONObject(response)).getJSONArray("models");
                     for (int i = 0; i < answerList.length(); i++)
                     {
-                        engineList.add(answerList.getJSONObject(i).getString("name"));
+                        engineList.add(CommonTools.modelNameBlankCharRemove(answerList.getJSONObject(i).getString("name")));
                         if (engineList.get(i).startsWith("models/")) engineList.set(i, engineList.get(i).substring(7));
                     }
                     Collections.sort(engineList);
@@ -55,7 +64,7 @@ public class ChatEngineGemini extends ChatEngine
     }
     
     @Override
-    public String chatTalk(ArrayList<ScreenTextDispMessage> ctx, String msg, boolean testMode)
+    public String chatTalk(ArrayList<ScreenTextDispMessage> ctx, String ctxModel, String msg, boolean testMode)
     {
         tokensI = 0;
         tokensO = 0;
@@ -65,9 +74,9 @@ public class ChatEngineGemini extends ChatEngine
         JSONArray messages = new JSONArray();
 
         JSONArray messages_;
-        for (int i = contextBeginIdx(ctx, CF); i < ctx.size(); i++)
+        for (int i = contextBeginIdx(ctx, ctxModel, CF, false); i < ctx.size(); i++)
         {
-            if ((ctx.get(i).tokens > 0) && (!ctx.get(i).ommit))
+            if (ctxMatch(ctx.get(i), ctxModel))
             {
                 ctxTokens += ctx.get(i).tokens;
                 messages_ = new JSONArray();
@@ -80,6 +89,13 @@ public class ChatEngineGemini extends ChatEngine
         messages.put(new JSONObject().put("role", "user").put("parts", messages_));
 
         requestBody.put("contents", messages);
+
+        if (!engineHint.isEmpty())
+        {
+            messages_ = new JSONArray();
+            messages_.put(new JSONObject().put("text", engineHint));
+            requestBody.put("systemInstruction", new JSONObject().put("parts", messages_));
+        }        
         
         JSONObject config = null;
         if ((!testMode) && CommonTools.isWithinRange(CF.ParamGetI("Temperature"), 0, 200))

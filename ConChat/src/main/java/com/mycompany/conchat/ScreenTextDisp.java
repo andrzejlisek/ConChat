@@ -19,6 +19,7 @@ public class ScreenTextDisp
     private final boolean debugLineInfo = false;
     private boolean blockUnderline = true;
     int textWidth = 80;
+    int textMessageWidth = 70;
     int textHeight = 23;
     int textOffsetLine = 11;
     int tableCellWidth = 0;
@@ -41,6 +42,7 @@ public class ScreenTextDisp
     private boolean MarkdownEquationBlock;
     private boolean MarkdownAfterListItem;
     private boolean MarkdownTable;
+    private boolean MarkdownAlignRight;
     
     private int[] MarkdownWindow;
     private static final int MarkdownWindowSize = 5;
@@ -113,7 +115,7 @@ public class ScreenTextDisp
                 }
             }
             
-            int tableCellWidth_ = ((textWidth - 1 - tableOffset) / (tableColumns - 1)) - 1;
+            int tableCellWidth_ = ((textMessageWidth - 1 - tableOffset) / (tableColumns - 1)) - 1;
             if (tableCellWidth_ < tableCellWidth)
             {
                 tableCellWidth_ = tableCellWidth;
@@ -149,6 +151,7 @@ public class ScreenTextDisp
                 {
                     cellContent.get(ii).textRaw.get(0).textType = ScreenTextDispRawItem.textTypeDef.normal;
                     cellContent.get(ii).textWidth = tableCellWidth_;
+                    cellContent.get(ii).textMessageWidth = tableCellWidth_;
                     cellContent.get(ii).textRaw.get(0).trim(true, true);
                     cellContent.get(ii).textRawItemWrap(0);
                     cellMaxLines = Math.max(cellMaxLines, cellContent.get(ii).textRaw.size());
@@ -278,6 +281,7 @@ public class ScreenTextDisp
     {
         ScreenTextDispRawItem item = textRaw.get(idx);
         item.MessageIdx = messageIdxCounter;
+        item.alignRight = MarkdownAlignRight;
         try
         {
             if (parseMarkdown)
@@ -383,13 +387,13 @@ public class ScreenTextDisp
                             boolean isAllowed = false;
                             if (MarkdownItalic)
                             {
-                                if ((CommonTools.isChar(MarkdownWindow[2], false, true, true)) && (CommonTools.isChar(MarkdownWindow[4], true, false, true)))
+                                if ((CommonTools.isChar(MarkdownWindow[2], false, true, true, true)) && (CommonTools.isChar(MarkdownWindow[4], true, false, false, true)))
                                 {
                                     isAllowed = true;
                                 }
                                 else
                                 {
-                                    if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[2], false, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, false)))
+                                    if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[2], false, true, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, true, false)))
                                     {
                                         isAllowed = true;
                                     }
@@ -405,13 +409,13 @@ public class ScreenTextDisp
                             }
                             else
                             {
-                                if ((CommonTools.isChar(MarkdownWindow[2], true, false, true)) && (CommonTools.isChar(MarkdownWindow[4], false, true, true)))
+                                if ((CommonTools.isChar(MarkdownWindow[2], true, false, false, true)) && (CommonTools.isChar(MarkdownWindow[4], false, true, true, true)))
                                 {
                                     isAllowed = true;
                                 }
                                 else
                                 {
-                                    if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[2], false, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, false)))
+                                    if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[2], false, true, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, true, false)))
                                     {
                                         isAllowed = true;
                                     }
@@ -457,13 +461,13 @@ public class ScreenTextDisp
                             boolean isAllowed = false;
                             if (MarkdownBold)
                             {
-                                if ((CommonTools.isChar(MarkdownWindow[1], false, true, true)) && (CommonTools.isChar(MarkdownWindow[4], true, false, true)))
+                                if ((CommonTools.isChar(MarkdownWindow[1], false, true, true, true)) && (CommonTools.isChar(MarkdownWindow[4], true, false, false, true)))
                                 {
                                     isAllowed = true;
                                 }
                                 else
                                 {
-                                    if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[1], false, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, false)))
+                                    if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[1], false, true, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, true, false)))
                                     {
                                         isAllowed = true;
                                     }
@@ -480,13 +484,13 @@ public class ScreenTextDisp
                             }
                             else
                             {
-                                if ((CommonTools.isChar(MarkdownWindow[1], true, false, true)) && (CommonTools.isChar(MarkdownWindow[4], false, true, true)))
+                                if ((CommonTools.isChar(MarkdownWindow[1], true, false, false, true)) && (CommonTools.isChar(MarkdownWindow[4], false, true, true, true)))
                                 {
                                     isAllowed = true;
                                 }
                                 else
                                 {
-                                    if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[1], false, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, false)))
+                                    if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[1], false, true, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, true, false)))
                                     {
                                         isAllowed = true;
                                     }
@@ -542,13 +546,13 @@ public class ScreenTextDisp
                             boolean isAllowed = false;
                             if (MarkdownBold && MarkdownItalic)
                             {
-                                if ((CommonTools.isChar(MarkdownWindow[0], false, true, true)) && (CommonTools.isChar(MarkdownWindow[4], true, false, true)))
+                                if ((CommonTools.isChar(MarkdownWindow[0], false, true, true, true)) && (CommonTools.isChar(MarkdownWindow[4], true, false, false, true)))
                                 {
                                     isAllowed = true;
                                 }
                                 else
                                 {
-                                    if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[0], false, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, false)))
+                                    if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[0], false, true, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, true, false)))
                                     {
                                         isAllowed = true;
                                     }
@@ -566,13 +570,13 @@ public class ScreenTextDisp
                             }
                             else if ((!MarkdownBold) && (!MarkdownItalic))
                             {
-                                if ((CommonTools.isChar(MarkdownWindow[0], true, false, true)) && (CommonTools.isChar(MarkdownWindow[4], false, true, true)))
+                                if ((CommonTools.isChar(MarkdownWindow[0], true, false, false, true)) && (CommonTools.isChar(MarkdownWindow[4], false, true, true, true)))
                                 {
                                     isAllowed = true;
                                 }
                                 else
                                 {
-                                    if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[0], false, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, false)))
+                                    if ((MarkdownWindow[3] == '*') && (CommonTools.isChar(MarkdownWindow[0], false, true, true, false)) && (CommonTools.isChar(MarkdownWindow[4], false, true, true, false)))
                                     {
                                         isAllowed = true;
                                     }
@@ -613,7 +617,7 @@ public class ScreenTextDisp
                         if (MarkdownWindow[3] == '\\')
                         {
                             int escapedChar = MarkdownWindow[4];
-                            if (CommonTools.isChar(escapedChar, false, false, true))
+                            if (CommonTools.isChar(escapedChar, false, false, false, true))
                             {
                                 // Not remove ]\ and \[
                                 // Convert \[ and \] to $$
@@ -669,6 +673,16 @@ public class ScreenTextDisp
                     {
                         if (windowingText.contains("<<<") || windowingText.contains(">>>"))
                         {
+                            if (windowingText.contains("<<<"))
+                            {
+                                item.alignRight = true;
+                                MarkdownAlignRight = true;
+                            }
+                            else
+                            {
+                                item.alignRight = false;
+                                MarkdownAlignRight = false;
+                            }
                             item.MessageIdx = -1;
                             textRawItemMarkdownParseReset(false, true);
                             item.textType = ScreenTextDispRawItem.textTypeDef.message;
@@ -743,11 +757,11 @@ public class ScreenTextDisp
                             {
                                 idxHash--;
                             }
-                            while (item.textLine.charAt(idxHash) != ' ')
+                            while (item.textLine.charAt(idxHash) == '#')
                             {
                                 idxHash--;
                             }
-                            if (idxHash < (item.textLine.length() - 1))
+                            if ((item.textLine.charAt(idxHash) == ' ') && (idxHash < (item.textLine.length() - 1)))
                             {
                                 item.remove(idxHash, -1);
                             }
@@ -780,6 +794,16 @@ public class ScreenTextDisp
                         item.textType = ScreenTextDispRawItem.textTypeDef.line;
                         if (windowingText.contains("<<<") || windowingText.contains(">>>"))
                         {
+                            if (windowingText.contains("<<<"))
+                            {
+                                item.alignRight = true;
+                                MarkdownAlignRight = true;
+                            }
+                            else
+                            {
+                                item.alignRight = false;
+                                MarkdownAlignRight = false;
+                            }
                             item.MessageIdx = -1;
                             textRawItemMarkdownParseReset(false, true);
                             item.textType = ScreenTextDispRawItem.textTypeDef.message;
@@ -797,7 +821,7 @@ public class ScreenTextDisp
                         boolean isTableCandidate = true;
                         for (int ii = 0; ii < windowingText.length(); ii++)
                         {
-                            if (CommonTools.isChar(windowingText.charAt(ii), false, true, false))
+                            if (CommonTools.isChar(windowingText.charAt(ii), false, true, true, false))
                             {
                                 isTableCandidate = false;
                             }
@@ -865,6 +889,16 @@ public class ScreenTextDisp
                         item.textType = ScreenTextDispRawItem.textTypeDef.line;
                         if (item.textLine.contains("<<<") || item.textLine.contains(">>>"))
                         {
+                            if (item.textLine.contains("<<<"))
+                            {
+                                item.alignRight = true;
+                                MarkdownAlignRight = true;
+                            }
+                            else
+                            {
+                                item.alignRight = false;
+                                MarkdownAlignRight = false;
+                            }
                             item.MessageIdx = -1;
                             textRawItemMarkdownParseReset(false, true);
                             item.textType = ScreenTextDispRawItem.textTypeDef.message;
@@ -1002,7 +1036,7 @@ public class ScreenTextDisp
     {
         if (textRaw.get(idx).textType == ScreenTextDispRawItem.textTypeDef.normal)
         {
-            int textWidthWrap = textWidth;
+            int textWidthWrap = textMessageWidth;
             if (textRaw.get(idx).lineFormat > 0)
             {
                 textWidthWrap = textWidthWrap / 2;
@@ -1109,22 +1143,34 @@ public class ScreenTextDisp
      * Get the text of message in the middle of screen
      * @return 
      */
-    public String getCurrentMessage()
+    public String getLastQuestion(boolean idx)
     {
         int t = textRaw.get(displayOffset).MessageIdx;
+        if ((t < 1) && (displayOffset > 0))
+        {
+            t = textRaw.get(displayOffset - 1).MessageIdx;
+        }
         if (t >= 0)
         {
-            return textMsg.get(t).message;
+            while ((t > 0) && (textMsg.get(t).isAnswer || textMsg.get(t).ommit))
+            {
+                t--;
+            }
+            if (textMsg.get(t).isAnswer || textMsg.get(t).ommit)
+            {
+                return idx ? "-1" : "";
+            }
+            return idx ? ("" + t + "") : textMsg.get(t).message;
         }
-        return "";
+        return idx ? "-1" : "";
     }
     
     /**
      * Enable or disable message ommit
      */
-    public void ommitSwitch()
+    public void ommitSwitch(int idx)
     {
-        int t = textRaw.get(displayOffset).MessageIdx;
+        int t = (idx >= 0) ? idx : textRaw.get(displayOffset).MessageIdx;
         if (t >= 0)
         {
             textMsg.get(t).ommit = !textMsg.get(t).ommit;
@@ -1406,8 +1452,8 @@ public class ScreenTextDisp
             displayOffset = textRaw.size();
         }
 
-        int contextBeginIdx = ChatEngine.contextBeginIdx(textMsg, CF);
-        
+        int contextBeginIdx = ChatEngine.contextBeginIdx(textMsg, ConChat.modelTalkListContextLimitModels, CF, true);
+
         for (int i = i_min; i < i_max; i++)
         {
             ConsoleInputOutput_.setTextAttrReset();
@@ -1425,43 +1471,88 @@ public class ScreenTextDisp
                 ScreenTextDispRawItem item = textRaw.get(i_);
                 textRawItemMeasureChars(i_, false);
                 boolean ommit = false;
-                boolean ommitZero = false;
-                int ommitZeroI = 1;
+                int ommitZeroI = 0;
+                int textWidth_ = (item.lineFormat == 0) ? textWidth : (textWidth / 2);
+                int itemOffset = 0;
                 if (item.MessageIdx >= 0)
                 {
                     ommit = textMsg.get(item.MessageIdx).ommit;
                     if (!ommit)
                     {
-                        ommitZero = (textMsg.get(item.MessageIdx).tokens <= 0);
-                        if (!ommitZero)
+                        switch (ChatEngine.ctxMatchBulk(textMsg.get(item.MessageIdx), ConChat.modelTalkListContextLimitModels))
                         {
-                            if (contextBeginIdx > item.MessageIdx)
-                            {
-                                ommitZero = true;
-                            }
+                            case 0: // No match
+                                ommitZeroI = (item.lineFormat == 0) ? 2 : 1;
+                                break;
+                            case 1: // Partial match
+                            case 2: // Full match
+                                if (item.MessageIdx < contextBeginIdx)
+                                {
+                                    ommitZeroI = (item.lineFormat == 0) ? 2 : 1;
+                                }
+                                break;
                         }
                     }
                 }
-                if (ommit || ommitZero)
+
+                // Reduce glitches in some consoles
+                if ((item.lineFormat > 0) && (item.textType == ScreenTextDispRawItem.textTypeDef.normal))
+                {
+                    ConsoleInputOutput_.screenLineClear();
+                }
+
+                if (ommit || (ommitZeroI > 0))
                 {
                     ConsoleInputOutput_.setTextAttrStrike1();
                 }
                 if ((item.textType == ScreenTextDispRawItem.textTypeDef.line) || (item.textType == ScreenTextDispRawItem.textTypeDef.message))
                 {
-                    for (int ii = 0; ii < textWidth; ii++)
+                    String msgInfo = "";
+                    if (item.textType == ScreenTextDispRawItem.textTypeDef.message)
                     {
-                        if (ommitZero)
+                        if (parseMarkdown)
+                        {
+                            msgInfo = ConChat.modelInfoFromMessage(item.textLine, item.alignRight ? 1 : 0);
+                        }
+                        else
+                        {
+                            msgInfo = item.textLine;
+                        }
+                    }
+                    for (int ii = 0; ii < textWidth_; ii++)
+                    {
+                        if (ommitZeroI > 0)
                         {
                             if (ii == ommitZeroI)
                             {
                                 ConsoleInputOutput_.setTextAttrStrike0();
                             }
-                            if (ii == (textWidth - ommitZeroI))
+                            if (ii == (textWidth_ - ommitZeroI))
                             {
                                 ConsoleInputOutput_.setTextAttrStrike1();
                             }
                         }
-                        ConsoleInputOutput_.printChar(CommonTools.splitter);
+                        if ((item.textType == ScreenTextDispRawItem.textTypeDef.line))
+                        {
+                            ConsoleInputOutput_.printChar(CommonTools.splitterText);
+                        }
+                        else
+                        {
+                            char infoChr = CommonTools.splitterMsg;
+                            int infoMargin = 2;
+                            if (textWidth_ < 50) infoMargin = 1;
+                            if (textWidth_ < 30) infoMargin = 0;
+                            int infoLen = msgInfo.length();
+                            if ((item.alignRight) && (ii >= textWidth_ - infoLen - infoMargin) && (ii < textWidth_ - infoMargin))
+                            {
+                                infoChr = msgInfo.charAt(ii - textWidth_ + infoMargin + infoLen);
+                            }
+                            if ((!item.alignRight) && (ii >= infoMargin) && ((ii - infoMargin) < infoLen))
+                            {
+                                infoChr = msgInfo.charAt(ii - infoMargin);
+                            }
+                            ConsoleInputOutput_.printChar(infoChr);
+                        }
                     }
                 }
                 else
@@ -1475,6 +1566,87 @@ public class ScreenTextDisp
                     }
 
                     
+                    itemOffset = item.blockOffset;
+                    
+                    
+                    // Right text alignment
+                    if ((item.alignRight) && (item.textType == ScreenTextDispRawItem.textTypeDef.normal))
+                    {
+                        /*itemOffset = 0 - textWidth_;
+                        if (item.lineFormat > 0)
+                        {
+                            itemOffset += (textWidth_ / 2);
+                        }
+                        int itemTextL = item.textLineLength;
+                        while ((itemTextL > 0) && (itemOffset < 0))
+                        {
+                            itemTextL--;
+                            itemOffset += item.textLineCharSize[itemTextL];
+                        }
+                        itemOffset += item.blockOffset;*/
+                        
+                        ScreenTextDispRawItem item_;
+                        
+                        int idxTemp1 = i_;
+                        item_ = textRaw.get(idxTemp1);
+                        while ((item_.alignRight) && (item_.MessageIdx == item.MessageIdx) && (item_.textType != ScreenTextDispRawItem.textTypeDef.message) && (idxTemp1 > 0))
+                        {
+                            idxTemp1--;
+                            item_ = textRaw.get(idxTemp1);
+                        }
+                        int idxTemp2 = i_;
+                        item_ = textRaw.get(idxTemp2);
+                        while ((item_.alignRight) && (item_.MessageIdx == item.MessageIdx) && (item_.textType != ScreenTextDispRawItem.textTypeDef.message) && (idxTemp2 < (textRaw.size())))
+                        {
+                            idxTemp2++;
+                            item_ = textRaw.get(idxTemp2);
+                        }
+                        
+                        boolean idxHasHeader = false;
+                        int textLineWidth = 0;
+                        for (int ii = (idxTemp1 + 1); ii < idxTemp2; ii++)
+                        {
+                            int temp = 0;
+                            if (ii != i_)
+                            {
+                                textRawItemMeasureChars(ii, false);
+                            }
+                            item_ = textRaw.get(ii);
+                            for (int iii = 0; iii < item_.textLineLength; iii++)
+                            {
+                                temp += item_.textLineCharSize[iii];
+                            }
+                            if (item_.lineFormat > 0)
+                            {
+                                idxHasHeader = true;
+                                textLineWidth = Math.max(textLineWidth, (temp * 2));
+                            }
+                            else
+                            {
+                                textLineWidth = Math.max(textLineWidth, temp);
+                            }
+                        }
+                        
+                        itemOffset = 0;
+                        if (idxHasHeader)
+                        {
+                            int t = (textWidth - textLineWidth) / 2;
+                            if (textWidth_ < textWidth)
+                            {
+                                itemOffset = itemOffset - t;
+                            }
+                            else
+                            {
+                                itemOffset = itemOffset - t - t;
+                            }
+                        }
+                        else
+                        {
+                            itemOffset = itemOffset - (textWidth - textLineWidth);
+                        }
+                    }
+                    
+                    
                     try
                     {
                         // Offset measure
@@ -1483,29 +1655,33 @@ public class ScreenTextDisp
                         int writeOffsetPad1 = 0;
                         int writeOffsetPad2 = 0;
                         int writeMarginPad = 0;
-                        if (item.blockOffset > 0)
+                        if (itemOffset > 0)
                         {
-                            while ((writeOffsetSize < (item.blockOffset + 1)) && (writeOffsetChar < item.textLineLength))
+                            while ((writeOffsetSize < (itemOffset + 1)) && (writeOffsetChar < item.textLineLength))
                             {
                                 writeOffsetSize += item.textLineCharSize[writeOffsetChar];
                                 writeOffsetChar++;
                             }
-                            writeOffsetPad1 = writeOffsetSize - (item.blockOffset + 1);
-                            writeOffsetPad2 = writeOffsetSize - (item.blockOffset + 1);
+                            writeOffsetPad1 = writeOffsetSize - (itemOffset + 1);
+                            writeOffsetPad2 = writeOffsetSize - (itemOffset + 1);
+                        }
+                        if (itemOffset < 0)
+                        {
+                            writeOffsetChar = itemOffset;
                         }
 
-                        boolean writeLeftScroll1 = (item.blockOffset > 0);
-                        boolean writeLeftScroll2 = (item.blockOffset > 0);
-                        int writeRightScrollPos = textWidth + 10;
+                        boolean writeLeftScroll1 = (itemOffset > 0);
+                        boolean writeLeftScroll2 = (itemOffset > 0);
+                        int writeRightScrollPos = textWidth_ + 10;
 
 
                         // Character counting
                         int virtualCursor = 0;
                         int textLinePointer = writeOffsetChar;
                         int writeCount = 0;
-                        while (virtualCursor < textWidth)
+                        while (virtualCursor < textWidth_)
                         {
-                            int textCharSize = textLinePointer < item.textLineLength ? item.textLineCharSize[textLinePointer] : 1;
+                            int textCharSize = ((textLinePointer >= 0) && (textLinePointer < item.textLineLength)) ? item.textLineCharSize[textLinePointer] : 1;
 
                             if (writeLeftScroll1)
                             {
@@ -1532,7 +1708,7 @@ public class ScreenTextDisp
                             // Low Surrogates (DC00 - DFFF)  - 1024
                             if (textLinePointer < item.textLineLength)
                             {
-                                int chrx = (int)item.textLine.charAt(textLinePointer);
+                                int chrx = textLinePointer >= 0 ? ((int)item.textLine.charAt(textLinePointer)) : 32;
                                 if ((chrx >= 0xDC00) && (chrx < 0xDFFF))
                                 {
                                     writeCount++;
@@ -1549,16 +1725,16 @@ public class ScreenTextDisp
                             }
                             
                             textLinePointer--;
-                            int textCharSize = textLinePointer < item.textLineLength ? item.textLineCharSize[textLinePointer] : 1;
+                            int textCharSize = ((textLinePointer >= 0) && (textLinePointer < item.textLineLength)) ? item.textLineCharSize[textLinePointer] : 1;
                             virtualCursor -= textCharSize;
-                            writeMarginPad = textWidth - 1 - virtualCursor;
+                            writeMarginPad = textWidth_ - 1 - virtualCursor;
                         }
                         else
                         {
-                            if (virtualCursor > textWidth)
+                            if (virtualCursor > textWidth_)
                             {
                                 writeRightScrollPos = textLinePointer - writeOffsetChar + writeOffsetPad2;
-                                writeMarginPad = virtualCursor - textWidth - 1;
+                                writeMarginPad = virtualCursor - textWidth_ - 1;
                             }
                         }
                         
@@ -1577,7 +1753,7 @@ public class ScreenTextDisp
                         // Character writing
                         for (int writeIterator = 0; writeIterator < writeCount; writeIterator++)
                         {
-                            if (ommitZero)
+                            if (ommitZeroI > 0)
                             {
                                 if ((writeIterator == ommitZeroI) && ((writeCount - writeIterator) > ommitZeroI))
                                 {
@@ -1589,7 +1765,7 @@ public class ScreenTextDisp
                                 }
                             }
 
-                            char textChar = textLinePointer < item.textLineLength ? item.textLine.charAt(textLinePointer) : ' ';
+                            char textChar = ((textLinePointer >= 0) && (textLinePointer < item.textLineLength)) ? item.textLine.charAt(textLinePointer) : ' ';
                             int useAttributesPtr = textLinePointer;
 
                             if (writeLeftScroll2)
@@ -1656,155 +1832,10 @@ public class ScreenTextDisp
                     {
                         displayUseCmd(30, i);
                     }
-                    
-                    
-                    /*ConsoleInputOutput_.setLineFormat(item.lineFormat);
-                    if (item.textType == ScreenTextDispRawItem.textTypeDef.code)
-                    {
-                        displayUseCmd(31, i);
-                    }
-                    ii_min = item.blockOffset;
-                    if ((item.blockOffset > 0) && (item.textLine.trim().length() > 0))
-                    {
-                        ConsoleInputOutput_.printChar(CommonTools.scrollL);
-                        ii_min++;
-                    }
-
-                    ii_max = item.length();
-                    int virtualCursorPos = ii_min - item.blockOffset;
-                    textWidth_ = virtualCursorPos;
-                    for (int ii = ii_min; ii < ii_max; ii++)
-                    {
-                        int virtualCharSize = item.textLineCharSize[ii];
-                        virtualCursorPos += virtualCharSize;
-                        textWidth_++;
-                        //textWidth_ -= (virtualCharSize - 1);
-                        ///f ((virtualCursorPos) >= (textWidth_ - 1))
-                        //{
-                        //    break;
-                        //}
-                        if ((virtualCursorPos) >= (textWidth))
-                        {
-                            break;
-                        }
-                    }
-                    while ((virtualCursorPos) < (textWidth))
-                    {
-                        virtualCursorPos++;
-                        textWidth_++;
-                    }
-                    
-                    if (ii_max > (textWidth_ + item.blockOffset)) ii_max = (textWidth_ + item.blockOffset);
-                    if ((item.length() - item.blockOffset) > textWidth_)
-                    {
-                        ii_max--;
-                    }
-                    for (int iii = 0; iii < textRaw.get(i_).cmdIdx.size(); iii++)
-                    {
-                        if (textRaw.get(i_).cmdIdx.get(iii) < ii_min)
-                        {
-                            displayUseCmd(textRaw.get(i_).cmdTxt.get(iii), i);
-                        }
-                    }
-                    virtualCursorPos = ii_min - item.blockOffset;
-                    for (int ii = ii_min; ii < ii_max; ii++)
-                    {
-                        if (ommitZero)
-                        {
-                            if ((ii - item.blockOffset) == ommitZeroI)
-                            {
-                                ConsoleInputOutput_.setTextAttrStrike0();
-                            }
-                            if ((ii - item.blockOffset) == (textWidth_ - ommitZeroI))
-                            {
-                                ConsoleInputOutput_.setTextAttrStrike1();
-                            }
-                        }
-                        for (int iii = 0; iii < textRaw.get(i_).cmdIdx.size(); iii++)
-                        {
-                            if (textRaw.get(i_).cmdIdx.get(iii) == ii)
-                            {
-                                displayUseCmd(textRaw.get(i_).cmdTxt.get(iii), i);
-                            }
-                        }
-                        if ((virtualCursorPos + textRaw.get(i_).textLineCharSize[ii]) > textWidth)
-                        {
-                            ConsoleInputOutput_.printChar('!');
-                            virtualCursorPos++;
-                        }
-                        else
-                        {
-                            ConsoleInputOutput_.printChar(textRaw.get(i_).textLine.charAt(ii));
-                            virtualCursorPos += textRaw.get(i_).textLineCharSize[ii];
-                        }
-                    }
-                    if ((item.length() - item.blockOffset) > textWidth_)
-                    {
-                        if (ommitZero)
-                        {
-                            ConsoleInputOutput_.setTextAttrStrike1();
-                        }
-                        ConsoleInputOutput_.printChar(CommonTools.scrollR);
-                        ii_max++;
-                    }
-                    for (int iii = 0; iii < textRaw.get(i_).cmdIdx.size(); iii++)
-                    {
-                        if (textRaw.get(i_).cmdIdx.get(iii) >= ii_max)
-                        {
-                            displayUseCmd(textRaw.get(i_).cmdTxt.get(iii), i);
-                        }
-                    }*/
                 }
 
-                /*if ((item.textType == ScreenTextDispRawItem.textTypeDef.code) || (item.textType == ScreenTextDispRawItem.textTypeDef.table))
-                {
-                    int ii__ = 0;
-                    if ((item.blockOffset > 0) && (item.textLine.trim().length() > 0))
-                    {
-                        ii__ = 1;
-                    }
-                    int ii_max_ = Math.max(ii__, ii_max - item.blockOffset);
-                    for (int ii = ii_max_; ii < textWidth_; ii++)
-                    {
-                        if (ommitZero)
-                        {
-                            if (ii == ommitZeroI)
-                            {
-                                ConsoleInputOutput_.setTextAttrStrike0();
-                            }
-                            if (ii == (textWidth_ - ommitZeroI))
-                            {
-                                ConsoleInputOutput_.setTextAttrStrike1();
-                            }
-                        }
-                        ConsoleInputOutput_.printChar('^');
-                    }
-                    if (item.textType == ScreenTextDispRawItem.textTypeDef.code)
-                    {
-                        displayUseCmd(30, i);
-                    }
-                }*/
 
-                /*if (item.textType == ScreenTextDispRawItem.textTypeDef.normal)
-                {
-                    for (int ii = ii_max; ii < textWidth_; ii++)
-                    {
-                        if (ommitZero)
-                        {
-                            if (ii == ommitZeroI)
-                            {
-                                ConsoleInputOutput_.setTextAttrStrike0();
-                            }
-                            if (ii == (textWidth_ - ommitZeroI))
-                            {
-                                ConsoleInputOutput_.setTextAttrStrike1();
-                            }
-                        }
-                        ConsoleInputOutput_.printChar(' ');
-                    }
-                }*/
-
-                if (ommit || ommitZero)
+                if (ommit || (ommitZeroI > 0))
                 {
                     ConsoleInputOutput_.setTextAttrStrike0();
                 }
@@ -1812,7 +1843,15 @@ public class ScreenTextDisp
                 if (debugLineInfo)
                 {
                     ConsoleInputOutput_.setCursorPos(3, i);
-                    ConsoleInputOutput_.printString("[" + item.lineNumber + "][" + item.MessageIdx + "]");
+                    ConsoleInputOutput_.printString("[" + item.lineNumber + "][" + item.MessageIdx + "][" + itemOffset + "]");
+                    if (item.alignRight)
+                    {
+                        ConsoleInputOutput_.printString(">");
+                    }
+                    else
+                    {
+                        ConsoleInputOutput_.printString("<");
+                    }
                 }
                 displayBackground.set(i, 0);
             }
@@ -1877,23 +1916,8 @@ public class ScreenTextDisp
                         }
 
                         msgBuf.clear();
-                        int strSplitter = S.substring(6, S.length() - 6).indexOf(CommonTools.splitterInfo);
-                        int msgTokens0 = -1;
-                        String msgTokensModel0 = "";
-                        if (strSplitter >= 0)
-                        {
-                            msgTokensModel0 = S.substring(strSplitter + 7, S.length() - 6);
-                            msgTokens0 = CommonTools.strToInt(S.substring(6, strSplitter + 6), -1);
-                        }
-                        else
-                        {
-                            msgTokens0 = CommonTools.strToInt(S.substring(6, S.length() - 6), -1);
-                        }
-                        if (msgTokens0 >= 0)
-                        {
-                            msgTokens = msgTokens0;
-                            msgTokensModel = msgTokensModel0;
-                        }
+                        msgTokens = CommonTools.strToInt(ConChat.modelInfoFromMessage(S.substring(3, S.length() - 3), 8), -1);
+                        msgTokensModel = ConChat.modelInfoFromMessage(S.substring(3, S.length() - 3), 0);
 
                         if (S.startsWith("___<<<") && S.endsWith("<<<___")) { msgAnswer = false; }
                         if (S.startsWith("___>>>") && S.endsWith(">>>___")) { msgAnswer = true; }
@@ -1979,6 +2003,7 @@ public class ScreenTextDisp
         textMsg.clear();
         messageIdxCounter = -1;
         textRaw.add(new ScreenTextDispRawItem(supplyLineNumber, 0));
+        MarkdownAlignRight = false;
         textRawItemMarkdownParseReset(true, true);
         if (fileName.length() > 0)
         {
@@ -2235,7 +2260,7 @@ public class ScreenTextDisp
         for (int i = 0; i < str.length(); i++)
         {
             char chr = str.charAt(i);
-            if (CommonTools.isChar(chr, false, false, true)) sb.append("\\");
+            if (CommonTools.isChar(chr, false, false, false, true)) sb.append("\\");
             sb.append(chr);
         }
         return sb.toString();
@@ -2251,6 +2276,7 @@ public class ScreenTextDisp
             convMarkdownToPlain_.parseMarkdown = true;
         }
         convMarkdownToPlain_.textWidth = str.length() + 10;
+        convMarkdownToPlain_.textMessageWidth = str.length() + 10;
         convMarkdownToPlain_.clear(false);
         convMarkdownToPlain_.supplyLine(str);
         StringBuilder sb = new StringBuilder();

@@ -16,12 +16,19 @@ import org.json.JSONObject;
  */
 public class ChatEngineClaude extends ChatEngine
 {
-    String chatSystemRole = "";
+    public ChatEngineClaude(ChatEngine __)
+    {
+        super(__.CF, __.CFC);
+        apiKey = CF.ParamGetS("KeyClaude");
+        objType = 3;
+        CloneObj(__);
+    }
 
     public ChatEngineClaude(ConfigFile CF_, ConfigFile CFC_)
     {
         super(CF_, CFC_);
         apiKey = CF.ParamGetS("KeyClaude");
+        objType = 3;
     }
 
     @Override
@@ -38,7 +45,7 @@ public class ChatEngineClaude extends ChatEngine
                     JSONArray answerList = (new JSONObject(response)).getJSONArray("data");
                     for (int i = 0; i < answerList.length(); i++)
                     {
-                        engineList.add(answerList.getJSONObject(i).getString("id"));
+                        engineList.add(CommonTools.modelNameBlankCharRemove(answerList.getJSONObject(i).getString("id")));
                     }
                     Collections.sort(engineList);
                 }
@@ -56,7 +63,7 @@ public class ChatEngineClaude extends ChatEngine
     }
     
     @Override
-    public String chatTalk(ArrayList<ScreenTextDispMessage> ctx, String msg, boolean testMode)
+    public String chatTalk(ArrayList<ScreenTextDispMessage> ctx, String ctxModel, String msg, boolean testMode)
     {
         tokensI = 0;
         tokensO = 0;
@@ -95,15 +102,15 @@ public class ChatEngineClaude extends ChatEngine
                 }
             }
         }
-        if (!chatSystemRole.isEmpty())
+        if (!engineHint.isEmpty())
         {
-            requestBody.put("system", chatSystemRole);
+            requestBody.put("system", engineHint);
         }
 
         JSONArray messages = new JSONArray();
-        for (int i = contextBeginIdx(ctx, CF); i < ctx.size(); i++)
+        for (int i = contextBeginIdx(ctx, ctxModel, CF, false); i < ctx.size(); i++)
         {
-            if ((ctx.get(i).tokens > 0) && (!ctx.get(i).ommit))
+            if (ctxMatch(ctx.get(i), ctxModel))
             {
                 ctxTokens += ctx.get(i).tokens;
                 messages.put(new JSONObject().put("role", ctx.get(i).isAnswer ? "assistant" : "user").put("content", ctx.get(i).message));

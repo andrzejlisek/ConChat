@@ -13,6 +13,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 /**
  *
@@ -22,6 +23,7 @@ public class ChatEngine
 {
     protected String apiKey = "";
     protected String engineName = "";
+    protected String engineHint = "";
     protected int tokensI;
     protected int tokensO;
     protected String tokensE = "";
@@ -29,6 +31,10 @@ public class ChatEngine
     protected ConfigFile CFC;
     
     public boolean isActive = false;
+    
+    public int objType = 0;
+
+    private static Random Random_;
     
     /**
      * List of available engines/models
@@ -51,41 +57,106 @@ public class ChatEngine
         CFC.FileSave(CommonTools.applDir + CommonTools.counterFileName);
     }
     
+    public final void CloneObj(ChatEngine __)
+    {
+        apiKey = __.apiKey;
+        engineName = __.engineName;
+        engineHint = __.engineHint;
+        tokensI = __.tokensI;
+        tokensO = __.tokensO;
+        tokensE = __.tokensE;
+        CF = __.CF;
+        CFC = __.CFC;
+        isActive = __.isActive;
+        engineList.clear();
+        for (int i = 0; i < __.engineList.size(); i++)
+        {
+            engineList.add(__.engineList.get(i));
+        }
+    }
+    
     public ChatEngine(ConfigFile CF_, ConfigFile CFC_)
     {
         CFC = CFC_;
         CF = CF_;
         engineList = new ArrayList<>();
         engineName = CF_.ParamGetS("Model");
+        engineList.clear();
+        objType = 0;
     }
+
+    public ChatEngine(ChatEngine __)
+    {
+        CFC = __.CFC;
+        CF = __.CF;
+        engineList = new ArrayList<>();
+        engineName = CF.ParamGetS("Model");
+        engineList.clear();
+        objType = 0;
+        CloneObj(__);
+    }
+
+    private static ArrayList<String> contextBeginIdxModelList;
+    private static String contextBeginIdxModelListStr = "~~null~~";
     
     /**
      * Fint the first message to send as context message list within token number limit
      * @param ctx Message list
+     * @param ctxModel
      * @param CF_ Configuration file
+     * @param partial
      * @return Index of first message to send
      */
-    public static int contextBeginIdx(ArrayList<ScreenTextDispMessage> ctx, ConfigFile CF_)
+    public static int contextBeginIdx(ArrayList<ScreenTextDispMessage> ctx, String ctxModel, ConfigFile CF_, boolean partial)
     {
-        int idx = 0;
-        int tokenLimit = CF_.ParamGetI("HistoryLimit");
-        if (tokenLimit > 0)
+        if ((contextBeginIdxModelList == null) || (!contextBeginIdxModelListStr.equals(ctxModel)))
         {
-            idx = ctx.size();
-            while ((tokenLimit >= 0) && (idx > 0))
+            if (contextBeginIdxModelList == null)
             {
-                idx--;
-                if (!ctx.get(idx).ommit)
-                {
-                    tokenLimit -= ctx.get(idx).unitLength(CF_);
-                }
+                contextBeginIdxModelList = new ArrayList<>();
             }
-            if (tokenLimit < 0)
+            else
             {
-                idx++;
+                contextBeginIdxModelList.clear();
+            }
+            String[] ctxModel_ = ctxModel.split(CommonTools.splitterInfoS);
+            for (int I = 0; I < ctxModel_.length; I++)
+            {
+                contextBeginIdxModelList.add(ctxModel_[I]);
             }
         }
-        return idx;
+        contextBeginIdxModelListStr = ctxModel;
+        int idx_ = partial ? (contextBeginIdxModelList.size()) : 0;
+        for (int I = 0; I < contextBeginIdxModelList.size(); I++)
+        {
+            int idx = 0;
+            int tokenLimit = CF_.ParamGetI("HistoryLimit");
+            if (tokenLimit > 0)
+            {
+                idx = ctx.size();
+                while ((tokenLimit >= 0) && (idx > 0))
+                {
+                    idx--;
+                    if (ctxMatch(ctx.get(idx), contextBeginIdxModelList.get(I)))
+                    {
+                        tokenLimit -= ctx.get(idx).unitLength(CF_);
+                    }
+                }
+                if (tokenLimit < 0)
+                {
+                    idx++;
+                }
+            }
+            if (partial)
+            {
+                idx_ = Math.min(idx_, idx);
+            }
+            else
+            {
+                idx_ = Math.max(idx_, idx);
+            }
+        }
+        return idx_;
     }
     
     /**
@@ -108,13 +179,18 @@ public class ChatEngine
         return false;
     }
     
-    private void saveMapToFile(Map<String, List<String>> prop)
+    public void setHint(String engineHint_)
+    {
+        engineHint = engineHint_.trim();
+    }
+    
+    private void saveMapToFile(Map<String, List<String>> prop, StringBuilder logSB)
     {
         for (Map.Entry<String, List<String>> propItem : prop.entrySet())
         {
             for (int i = 0; i < propItem.getValue().size(); i++)
             {
-                CommonTools.fileSaveText(CommonTools.applDir + CommonTools.logFileName, propItem.getKey() + "=" + propItem.getValue().get(i) + "\n");
+                logSB.append(propItem.getKey() + "=" + propItem.getValue().get(i) + "\n");
             }
         }
     }
@@ -170,14 +246,16 @@ public class ChatEngine
             {
                 String ts = CommonTools.timeStamp();
                 String fn = CommonTools.applDir + CommonTools.logFileName;
-                CommonTools.fileSaveText(fn, ts + " - request begin\n");
-                CommonTools.fileSaveText(fn, urlAddr + "\n");
-                saveMapToFile(request.headers().map());
+                StringBuilder logSB = new StringBuilder();
+                logSB.append(ts + " - request begin\n");
+                logSB.append(urlAddr + "\n");
+                saveMapToFile(request.headers().map(), logSB);
                 if (!requestBody.isEmpty())
                 {
-                    CommonTools.fileSaveText(fn, requestBody + "\n");
+                    logSB.append(requestBody + "\n");
                 }
-                CommonTools.fileSaveText(fn, ts + " - request end\n\n");
+                logSB.append(ts + " - request end\n\n");
+                CommonTools.fileSaveText(fn, logSB.toString());
             }
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -186,11 +264,13 @@ public class ChatEngine
             {
                 String ts = CommonTools.timeStamp();
                 String fn = CommonTools.applDir + CommonTools.logFileName;
-                CommonTools.fileSaveText(fn, ts + " - response begin\n");
-                CommonTools.fileSaveText(fn, response.statusCode() + "\n");
-                saveMapToFile(response.headers().map());
-                CommonTools.fileSaveText(fn, response.body() + "\n");
-                CommonTools.fileSaveText(fn, ts + " - response end\n\n");
+                StringBuilder logSB = new StringBuilder();
+                logSB.append(ts + " - response begin\n");
+                logSB.append(response.statusCode() + "\n");
+                saveMapToFile(response.headers().map(), logSB);
+                logSB.append(response.body() + "\n");
+                logSB.append(ts + " - response end\n\n");
+                CommonTools.fileSaveText(fn, logSB.toString());
             }
             
             if (response.statusCode() == 200)
@@ -209,9 +289,11 @@ public class ChatEngine
             {
                 String ts = CommonTools.timeStamp();
                 String fn = CommonTools.applDir + CommonTools.logFileName;
-                CommonTools.fileSaveText(fn, ts + " - error begin\n");
-                CommonTools.fileSaveText(fn, e.getMessage() + "\n");
-                CommonTools.fileSaveText(fn, ts + " - error end\n\n");
+                StringBuilder logSB = new StringBuilder();
+                logSB.append(ts + " - error begin\n");
+                logSB.append(e.getMessage() + "\n");
+                logSB.append(ts + " - error end\n\n");
+                CommonTools.fileSaveText(fn, logSB.toString());
             }
 
             return "ERROR\n" + e.getMessage();
@@ -226,7 +308,7 @@ public class ChatEngine
         }
         else
         {
-            engineList.add(engineName);
+            engineList.add(CommonTools.modelNameBlankCharRemove(engineName));
         }
     }
     
@@ -242,7 +324,7 @@ public class ChatEngine
             String engineName_ = engineName;
             engineName = testEngineName;
             ArrayList<ScreenTextDispMessage> ctx = new ArrayList<>();
-            String testStr = chatTalk(ctx, "test", true);
+            String testStr = chatTalk(ctx, "", "test", true);
             if (testStr.startsWith("```ERROR"))
             {
                 engineName = engineName_;
@@ -266,16 +348,120 @@ public class ChatEngine
     {
         return engineList;
     }
-    
-    public String chatTalk(ArrayList<ScreenTextDispMessage> ctx, String msg, boolean testMode)
+
+    public static int ctxMatchBulk(ScreenTextDispMessage ctxItem, String ctxModel)
     {
-        if (engineName.isEmpty())
+        if (ctxModel.contains(CommonTools.splitterInfoS))
         {
-            return "Chat model not selected";
+            String[] ctxModel_ = ctxModel.split(CommonTools.splitterInfoS);
+            int match0 = 0;
+            int match1 = 0;
+            for (int i = 0; i < ctxModel_.length; i++)
+            {
+                if (ctxMatch(ctxItem, ctxModel_[i]))
+                {
+                    match1++;
+                }
+                else
+                {
+                    match0++;
+                }
+            }
+            if ((match1 > 0) && (match0 == 0)) return 2;
+            if ((match1 == 0) && (match0 > 0)) return 0;
+            return 1;
         }
         else
         {
-            return "Invalid chat model `" + engineName + "`";
+            if (ctxMatch(ctxItem, ctxModel))
+            {
+                return 2;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+    }
+    
+    protected static boolean ctxMatch(ScreenTextDispMessage ctxItem, String ctxModel)
+    {
+        if ((ctxItem.tokens > 0) && (!ctxItem.ommit))
+        {
+            if (ctxModel.isEmpty())
+            {
+                return true;
+            }
+            String modelList_ = "," + ctxItem.model + ",";
+            if (modelList_.contains("," + ctxModel + ","))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    public String chatTalk(ArrayList<ScreenTextDispMessage> ctx, String ctxModel, String msg, boolean testMode)
+    {
+        if (Random_ == null)
+        {
+            Random_ = new Random();
+        }
+        
+        tokensE = engineName;
+        if (engineList.contains(engineName))
+        {
+            try
+            {
+                Thread.sleep(5000);
+            }
+            catch (InterruptedException ex)
+            {
+            }
+            
+            String answer = (engineHint.isEmpty() ? "" : "{" + engineHint + "}") + "" + Random_.nextLong() + "";
+            int ctxTokens = 0;
+            if (CF.ParamGetB("Log"))
+            {
+                String ts = CommonTools.timeStamp();
+                String fn = CommonTools.applDir + CommonTools.logFileName;
+                StringBuilder logSB = new StringBuilder();
+                logSB.append(ts + " - dummy begin\n");
+                logSB.append("Model: " + engineName + "\n");
+                logSB.append("Hint: " + engineHint + "\n");
+                logSB.append("Match: " + ctxModel + "\n");
+                for (int i = contextBeginIdx(ctx, ctxModel, CF, false); i < ctx.size(); i++)
+                {
+                    if (ctxMatch(ctx.get(i), ctxModel))
+                    {
+                        ctxTokens += ctx.get(i).tokens;
+                        String ctxItem = (ctx.get(i).isAnswer ? ">>>: " : "<<<: ");
+                        String answerPart = CommonTools.stringReplaceMultiply(ctx.get(i).message, "\n", " ");
+                        if (answerPart.length() > 50)
+                        {
+                            answerPart = answerPart.substring(answerPart.length() - 50);
+                        }
+                        ctxItem = ctxItem + answerPart;
+                        logSB.append("Context " + ctxItem + "\n");
+                    }
+                }
+                logSB.append("Question<<<: " + msg + "\n");
+                logSB.append("Answer  >>>: " + answer + "\n");
+                logSB.append(ts + " - dummy end\n\n");
+                CommonTools.fileSaveText(fn, logSB.toString());
+            }
+            tokensI = ctxTokens + ((msg.length() + 5) / 5);
+            tokensO = ((answer.length() + 5) / 5);
+            tokenCount(tokensI, tokensO, testMode);
+            tokensI -= ctxTokens;
+            if (tokensI < 1) tokensI = 1;
+            return answer;
+        }
+        else
+        {
+            tokensI = 0;
+            tokensO = 0;
+            return "? " + engineName + " ?";
         }
     }
     

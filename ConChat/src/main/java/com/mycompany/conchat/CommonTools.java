@@ -62,9 +62,18 @@ public class CommonTools
     /**
      * Splitter between chat messages
      */
-    static char splitter = 0x2550;
+    static char splitterMsg = 0x2550;
+
+    /**
+     * Splitter within message
+     */
+    static char splitterText = 0x2500;
     
     static char splitterInfo = ' ';
+    static String splitterInfoS = " ";
+    
+    static char modelNameBlankChar = '.';
+    static String modelNameBlankCharS = ".";
     
     static String applDir = "";
     static String logFileName = "http.txt";
@@ -74,10 +83,30 @@ public class CommonTools
     static String contextFileNamePrefix = "context";
     static String contextFileNameSuffix = ".txt";
     
-    /**
-     * Token counter size in characters
-     */
-    static int counterSize = 10;
+    static String modelNameBlankCharRemove(String cmd)
+    {
+        while (cmd.startsWith(CommonTools.modelNameBlankCharS) && (cmd.length() > 1))
+        {
+            cmd = cmd.substring(1);
+        }
+        while (cmd.endsWith(CommonTools.modelNameBlankCharS) && (cmd.length() > 1))
+        {
+            cmd = cmd.substring(0, cmd.length() - 1);
+        }
+        cmd = cmd.trim();
+        for (int i = 0; i < cmd.length(); i++)
+        {
+            if (cmd.charAt(i) == splitterInfo)
+            {
+                cmd = stringSetChar(cmd, i, '_');
+            }
+            if (cmd.charAt(i) == ',')
+            {
+                cmd = stringSetChar(cmd, i, '_');
+            }
+        }
+        return cmd;
+    }
     
     static void debug(String str)
     {
@@ -118,9 +147,47 @@ public class CommonTools
         }
     }
 
+    static String intToDec(long val, int crop, int dec)
+    {
+        if (val < 0)
+        {
+            String S_ = "";
+            while (S_.length() < dec)
+            {
+                S_ = "-" + S_;
+            }
+            return "-." + S_;
+        }
+        while (crop > 1)
+        {
+            val = val / 10L;
+            crop--;
+        }
+        if (crop == 1)
+        {
+            if ((val % 10L) >= 5)
+            {
+                val += 10L;
+            }
+            val = val / 10L;
+            crop--;
+        }
+        String S = val + "";
+        while (S.length() <= dec)
+        {
+            S = "0" + S;
+        }
+        return S.substring(0, S.length() - dec) + "." + S.substring(S.length() - dec);
+    }
+    
     static String intToStr(int val, int pad)
     {
         String valStr = "" + val;
+        return stringIndent(pad - valStr.length(), ' ') + valStr;
+    }
+
+    static String intToStr(String valStr, int pad)
+    {
         return stringIndent(pad - valStr.length(), ' ') + valStr;
     }
     
@@ -443,8 +510,20 @@ public class CommonTools
                 return "";
         }
     }
+
+    public static boolean strOnlyDigits(String str)
+    {
+        for (int i = 1; i < str.length(); i++)
+        {
+            if (!isChar(str.charAt(i), false, false, true, false))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
     
-    public static boolean isChar(int chr, Boolean chrSpace, Boolean chrAlphaNum, Boolean chrSpecial)
+    public static boolean isChar(int chr, boolean chrSpace, boolean chrAlpha, boolean chrNum, boolean chrSpecial)
     {
         if (chrSpace)
         {
@@ -455,9 +534,8 @@ public class CommonTools
                     return true;
             }
         }
-        if (chrAlphaNum)
+        if (chrAlpha)
         {
-            if ((chr >= 0x30) && (chr <= 0x39)) return true;
             if ((chr >= 0x41) && (chr <= 0x5A)) return true;
             if ((chr >= 0x61) && (chr <= 0x7A)) return true;
             if (chr >= 128)
@@ -467,6 +545,10 @@ public class CommonTools
                     return true;
                 }
             }
+        }
+        if (chrNum)
+        {
+            if ((chr >= 0x30) && (chr <= 0x39)) return true;
         }
         if (chrSpecial)
         {

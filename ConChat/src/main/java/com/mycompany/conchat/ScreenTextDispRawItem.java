@@ -30,6 +30,7 @@ public class ScreenTextDispRawItem
     int indentNext;
     int blockId;
     int blockOffset;
+    boolean alignRight = false;
 
     public ScreenTextDispRawItem(int lineNumber_, int indent_)
     {
@@ -46,6 +47,7 @@ public class ScreenTextDispRawItem
         blockId = 0;
         blockOffset = 0;
         MessageIdx = -1;
+        alignRight = false;
     }
 
     public ScreenTextDispRawItem(ScreenTextDispRawItem item, boolean clone)
@@ -63,6 +65,7 @@ public class ScreenTextDispRawItem
         blockId = item.blockId;
         blockOffset = item.blockOffset;
         MessageIdx = item.MessageIdx;
+        alignRight = item.alignRight;
         if (clone)
         {
             textLine = item.textLine;

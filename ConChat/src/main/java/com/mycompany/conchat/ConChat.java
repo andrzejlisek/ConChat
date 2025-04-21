@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 
 /**
@@ -27,6 +29,7 @@ public class ConChat
     static int inputBoxHeight = 2;
     static int waitSignState = 0;
     static int waitTime = 0;
+    static String waitInfo = "";
     static String waitTimeStr = "";
     static Instant waitTimeStart;
     
@@ -43,6 +46,10 @@ public class ConChat
                 case 2: ConsoleInputOutput_.printChar('\\'); waitSignState++; break;
                 case 3: ConsoleInputOutput_.printChar('|'); waitSignState++; break;
                 case 4: ConsoleInputOutput_.printChar('/'); waitSignState = 1; break;
+            }
+            if (!waitInfo.isEmpty())
+            {
+                ConsoleInputOutput_.printString(waitInfo);
             }
             if (waitTime > 0)
             {
@@ -71,7 +78,7 @@ public class ConChat
         }
     }
     
-    static void waitStart(int waitTime_)
+    static void waitStart(int waitTime_, String waitInfo_)
     {
         ScreenTextInput_.reset();
         ConsoleInputOutput_.setTextAttrBold1();
@@ -79,6 +86,7 @@ public class ConChat
 
         waitTimeStr = "";
         waitTime = waitTime_;
+        waitInfo = waitInfo_;
         waitTimeStart = Instant.now();
         waitSignState = 1;
         waitIndicate();
@@ -116,6 +124,238 @@ public class ConChat
         waitTime = 0;
     }
     
+    public static String modelTalkListContextLimitModels = "";
+    
+    static boolean modelTalkListUpdate()
+    {
+        modelTalkList.clear();
+        String modelTalkSeq = CF.ParamGetS("Model");
+        boolean nums = true;
+        for (int i = 0; i < modelTalkSeq.length(); i++)
+        {
+            if (!CommonTools.isChar(modelTalkSeq.charAt(i), false, false, true, false))
+            {
+                nums = false;
+            }
+        }
+        if (nums)
+        {
+            int favIdx = 1;
+            String[] fav = (";" + CF.ParamGetS("Favorite") + ";").split(";");
+            modelTalkListContextLimitModels = "";
+
+            for (int i = 0; i < fav.length; i++)
+            {
+                if (fav[i].length() > 0)
+                {
+                    int favPos = EngineName.indexOf(fav[i]);
+                    if (favPos >= 0)
+                    {
+                        //String engineNameItem = EngineName.get(favPos);
+                        //if (ChatEngine.isValidEngine(engineNameItem))
+                        //{
+                        //}
+                        EngineFav.set(favPos, favIdx);
+                        favIdx++;
+                    }
+                }
+            }
+            for (int i = 0; i < modelTalkSeq.length(); i++)
+            {
+                int N = modelTalkSeq.charAt(i) - 48;
+                if (N == 0) { N = 10; }
+                int Nidx = EngineFav.indexOf(N);
+                if (Nidx >= 0)
+                {
+                    if (!modelTalkListContextLimitModels.isEmpty())
+                    {
+                        modelTalkListContextLimitModels = modelTalkListContextLimitModels + CommonTools.splitterInfoS;
+                    }
+                    modelTalkListContextLimitModels = modelTalkListContextLimitModels + EngineName.get(Nidx);
+                    modelTalkList.add(EngineName.get(Nidx));
+                }
+            }
+            return true;
+        }
+        else
+        {
+            modelTalkList.add(modelTalkSeq);
+            modelTalkListContextLimitModels = "";
+            return false;
+        }
+    }
+    
+    static String modelInfoFavName(String modelName_, boolean useZero)
+    {
+        int i = CommonTools.strToInt(modelName_, -1);
+        if (useZero)
+        {
+            if (i == 0)
+            {
+                i = 10;
+            }
+            if (i > 10)
+            {
+                return "";
+            }
+        }
+        if (i > 0)
+        {
+            int t = EngineFav.indexOf(i);
+            if ((t >= 0) && (t < EngineName.size()))
+            {
+                return EngineName.get(t);
+            }
+        }
+        return "";
+    }
+    
+    static String modelInfoFavNumber(String modelName_, boolean useZero)
+    {
+        int t = EngineName.indexOf(modelName_);
+        if ((t >= 0) && (t < EngineFav.size()))
+        {
+            if (useZero)
+            {
+                if (EngineFav.get(t) < 10)
+                {
+                    return "" + EngineFav.get(t) + "";
+                }
+                if (EngineFav.get(t) == 10)
+                {
+                    return "0";
+                }
+                return "";
+            }
+            else
+            {
+                return "" + EngineFav.get(t) + "";
+            }
+        }
+        return "";
+    }
+    
+    static String modelInfoFromMessage(String rawInfo, int infoType)
+    {
+        String infoArray[];
+        if (infoType < 10)
+        {
+            infoArray = rawInfo.substring(3, rawInfo.length() - 3).split(CommonTools.splitterInfo + "");
+        }
+        else
+        {
+            infoArray = rawInfo.split(",");
+        }
+        StringBuilder sb = new StringBuilder();
+        switch (infoType)
+        {
+            case 0: // Answer
+                for (int i = 1; i < infoArray.length; i += 2)
+                {
+                    if (i > 1)
+                    {
+                        sb.append(",");
+                    }
+                    sb.append(infoArray[i]);
+                }
+                break;
+            case 1: // User
+                sb.append("user");
+                break;
+            case 2: // Info
+                if (infoArray.length > 2)
+                {
+                    for (int i = 1; i < infoArray.length; i += 2)
+                    {
+                        String s = modelInfoFavNumber(infoArray[i], true);
+                        if (s.isEmpty())
+                        {
+                            sb.append("[" + infoArray[i] + "]");
+                        }
+                        else
+                        {
+                            sb.append(s);
+                        }
+                    }
+                }
+                else
+                {
+                    if (infoArray.length == 2)
+                    {
+                        sb.append(infoArray[1]);
+                    }
+                    else
+                    {
+                        sb.append("?");
+                    }
+                }
+                break;
+            case 8: // Tokens
+                {
+                    int t = 0;
+                    for (int i = 0; i < infoArray.length; i += 2)
+                    {
+                        t = t + CommonTools.strToInt(infoArray[i], 0);
+                    }
+                    sb.append(t);
+                }
+                break;
+            case 9: // Raw text
+                sb.append(rawInfo);
+                break;
+            case 10: // Model names to numbers
+                if (infoArray.length > 1)
+                {
+                    for (int i = 0; i < infoArray.length; i += 1)
+                    {
+                        String s = modelInfoFavNumber(infoArray[i], true);
+                        if (s.isEmpty())
+                        {
+                            sb.append("[" + infoArray[i] + "]");
+                        }
+                        else
+                        {
+                            sb.append(s);
+                        }
+                    }
+                }
+                else
+                {
+                    if (infoArray.length == 1)
+                    {
+                        sb.append(infoArray[0]);
+                    }
+                    else
+                    {
+                        sb.append("?");
+                    }
+                }
+                break;
+            case 11: // Model numbers to names
+                {
+                    if (CommonTools.strOnlyDigits(rawInfo))
+                    {
+                        for (int i = 0; i < rawInfo.length(); i++)
+                        {
+                            if (i > 0)
+                            {
+                                sb.append(",");
+                            }
+                            sb.append(modelInfoFavName(rawInfo.substring(i, i + 1), true));
+                        }
+                    }
+                    else
+                    {
+                        sb.append(rawInfo);
+                    }
+                }
+                break;
+        }
+        return sb.toString();
+    }
+    
+    
+    
     static ConfigFile CF;
     static ConfigFile CFC;
 
@@ -127,6 +367,103 @@ public class ConChat
     static ArrayList<String> archFileId;
     static ArrayList<Integer> archFileNumber;
     
+    static ArrayList<String> modelTalkList;
+
+    static int getTokenCounterSize()
+    {
+        switch (CF.ParamGetI("Counter"))
+        {
+            default:
+                return 10;
+            case 1:
+                return 10;
+            case 2:
+                return 6;
+        }
+    }
+    
+    static String getTokenCounter(String engineName_, int infoType)
+    {
+        switch (CF.ParamGetI("Counter"))
+        {
+            default:
+                {
+                    switch (infoType)
+                    {
+                        case 0:
+                            return "2";
+                        case 1:
+                            return String.valueOf(CFC.ParamGetI(engineName_ + "-i", 0));
+                        case 2:
+                            return String.valueOf(CFC.ParamGetI(engineName_ + "-o", 0));
+                        case 3:
+                            return "0";
+                    }
+                }
+                break;
+            case 1:
+                {
+                    int tokenPrice = 0;
+                    switch (infoType)
+                    {
+                        case 0:
+                            return "2";
+                        case 1:
+                            tokenPrice = CFC.ParamGetI(engineName_ + "-ii", 0);
+                            break;
+                        case 2:
+                            tokenPrice = CFC.ParamGetI(engineName_ + "-oo", 0);
+                            break;
+                        case 3:
+                            return "0";
+                    }
+                    if (tokenPrice > 0)
+                    {
+                        return CommonTools.intToDec(tokenPrice, 0, 4);
+                    }
+                    else
+                    {
+                        return CommonTools.intToDec(-1, 0, 4);
+                    }
+                }
+            case 2:
+                {
+                    long tokenCost = 0;
+                    long tokenAmount1 = CFC.ParamGetI(engineName_ + "-i", 0);
+                    long tokenPrice1 = CFC.ParamGetI(engineName_ + "-ii", 0);
+                    long tokenAmount2 = CFC.ParamGetI(engineName_ + "-o", 0);
+                    long tokenPrice2 = CFC.ParamGetI(engineName_ + "-oo", 0);
+                    switch (infoType)
+                    {
+                        case 0:
+                            return "3";
+                        case 1:
+                            tokenCost = (tokenAmount1 * tokenPrice1);
+                            if (tokenPrice1 <= 0) tokenCost = -1;
+                            break;
+                        case 2:
+                            tokenCost = (tokenAmount2 * tokenPrice2);
+                            if (tokenPrice2 <= 0) tokenCost = -1;
+                            break;
+                        case 3:
+                            tokenCost = (tokenAmount1 * tokenPrice1) + (tokenAmount2 * tokenPrice2);
+                            if (tokenPrice1 <= 0) tokenCost = -1;
+                            if (tokenPrice2 <= 0) tokenCost = -1;
+                            break;
+                    }
+                    if (tokenCost >= 0)
+                    {
+                        return CommonTools.intToDec(tokenCost, 8, 2);
+                    }
+                    else
+                    {
+                        return CommonTools.intToDec(-1, 0, 2);
+                    }
+                }
+        }
+        return "";
+    }
+    
     static void refreshSettingText()
     {
         String fav = ";" + CF.ParamGetS("Favorite") + ";";
@@ -135,13 +472,11 @@ public class ConChat
         int ctxSummaryMsg = 0;
         int ctxSummaryWrd = 0;
         int ctxSummaryChr = 0;
-        int ctxSummaryTok = 0;
         int ctxSummaryMsgUsed = 0;
         int ctxSummaryWrdUsed = 0;
         int ctxSummaryChrUsed = 0;
-        int ctxSummaryTokUsed = 0;
         ArrayList<ScreenTextDispMessage> ctxMsg = ScreenTextDisp_[workContext].textMsg;
-        int contextBeginIdx = ChatEngine.contextBeginIdx(ctxMsg, CF);
+        int contextBeginIdx = ChatEngine.contextBeginIdx(ctxMsg, modelTalkListContextLimitModels, CF, true);
         for (int i = 0; i < ctxMsg.size(); i++)
         {
             if ((!ctxMsg.get(i).ommit) && (ctxMsg.get(i).unitLength(CF) > 0))
@@ -151,15 +486,14 @@ public class ConChat
                     ctxSummaryMsgUsed++;
                     ctxSummaryWrdUsed += ctxMsg.get(i).unitLength(0);
                     ctxSummaryChrUsed += ctxMsg.get(i).unitLength(1);
-                    ctxSummaryTokUsed += ctxMsg.get(i).unitLength(3);
                 }
             }
             ctxSummaryMsg++;
             ctxSummaryWrd += ctxMsg.get(i).unitLength(0);
             ctxSummaryChr += ctxMsg.get(i).unitLength(1);
-            ctxSummaryTok += ctxMsg.get(i).unitLength(3);
         }
 
+        modelTalkListUpdate();
         String engineName = CF.ParamGetS("Model");
 
         int msgLength0 = ScreenTextDisp_[workContext].getMessageLength(0);
@@ -170,6 +504,7 @@ public class ConChat
         
         ScreenTextDisp_[10].clear(true);
         ScreenTextDisp_[10].supplyLine("# " + workContext + " " + engineName);
+        ScreenTextDisp_[10].supplyLine(CF.ParamGetS("Hint" + workContext));
         ScreenTextDisp_[10].supplyLine("");
         switch (CF.ParamGetI("HistoryUnit"))
         {
@@ -183,14 +518,15 @@ public class ConChat
                 ScreenTextDisp_[10].supplyLine("$$Stats     Words  Characters  $$`Messages`");
                 break;
         }
-        ScreenTextDisp_[10].supplyLine("$$Current " + CommonTools.intToStr(msgLength0, 7) + "   " + CommonTools.intToStr(msgLength1, 9) + "   " + CommonTools.intToStr(msgLength2, 7) + "   $$" + ScreenTextDisp_[workContext].getMessageInfo(engineName));
+        ScreenTextDisp_[10].supplyLine("$$Current " + CommonTools.intToStr(msgLength0, 7) + "   " + CommonTools.intToStr(msgLength1, 9) + "   " + CommonTools.intToStr(msgLength2, 7) + "   $$" + modelInfoFromMessage(ScreenTextDisp_[workContext].getMessageInfo(modelInfoFromMessage(engineName, 11)), 10));
         ScreenTextDisp_[10].supplyLine("$$History " + CommonTools.intToStr(ctxSummaryWrdUsed, 7) + "   " + CommonTools.intToStr(ctxSummaryChrUsed, 9) + "   " + CommonTools.intToStr(ctxSummaryMsgUsed, 7) + "$$");
         ScreenTextDisp_[10].supplyLine("$$Context " + CommonTools.intToStr(ctxSummaryWrd, 7) + "   " + CommonTools.intToStr(ctxSummaryChr, 9) + "   " + CommonTools.intToStr(ctxSummaryMsg, 7) + "$$");
         ScreenTextDisp_[10].supplyLine("");
 
         int engineNameLength = 0;
-        int counterSizeI = CommonTools.counterSize;
-        int counterSizeO = CommonTools.counterSize;
+        int counterSizeI = getTokenCounterSize();
+        int counterSizeO = getTokenCounterSize();
+        int counterSizeT = getTokenCounterSize();
         for (int i = 0; i < EngineName.size(); i++)
         {
             String engineNameItem = EngineName.get(i);
@@ -198,10 +534,9 @@ public class ConChat
             {
                 engineNameLength = Math.max(engineNameLength, engineNameItem.length());
                 EngineFav.set(i, -1);
-                int numLengthI = String.valueOf(CFC.ParamGetI(engineNameItem + "-i", 0)).length();
-                int numLengthO = String.valueOf(CFC.ParamGetI(engineNameItem + "-o", 0)).length();
-                counterSizeI = Math.max(counterSizeI, numLengthI);
-                counterSizeO = Math.max(counterSizeO, numLengthO);
+                counterSizeI = Math.max(counterSizeI, getTokenCounter(engineNameItem, 1).length());
+                counterSizeO = Math.max(counterSizeO, getTokenCounter(engineNameItem, 2).length());
+                counterSizeT = Math.max(counterSizeT, getTokenCounter(engineNameItem, 3).length());
             }
         }
 
@@ -235,7 +570,7 @@ public class ConChat
                     }
                     if (ChatEngine.isValidEngine(engineNameItem))
                     {
-                        if (engineName.equals(engineNameItem))
+                        if (modelTalkList.contains(engineNameItem))
                         {
                             ScreenTextDisp_[10].supply("`");
                         }
@@ -245,9 +580,13 @@ public class ConChat
                         }
                         ScreenTextDisp_[10].supply(engineNameItem);
                         ScreenTextDisp_[10].supply(CommonTools.stringIndent(engineNameLength - engineNameItem.length(), ' '));
-                        ScreenTextDisp_[10].supply(" " + CommonTools.intToStr(CFC.ParamGetI(engineNameItem + "-i", 0), counterSizeI));
-                        ScreenTextDisp_[10].supply(" " + CommonTools.intToStr(CFC.ParamGetI(engineNameItem + "-o", 0), counterSizeO));
-                        if (engineName.equals(engineNameItem))
+                        ScreenTextDisp_[10].supply(" " + CommonTools.intToStr(getTokenCounter(engineNameItem, 1), counterSizeI));
+                        ScreenTextDisp_[10].supply(" " + CommonTools.intToStr(getTokenCounter(engineNameItem, 2), counterSizeO));
+                        if (getTokenCounter("", 0) == "3")
+                        {
+                            ScreenTextDisp_[10].supply(" " + CommonTools.intToStr(getTokenCounter(engineNameItem, 3), counterSizeT));
+                        }
+                        if (modelTalkList.contains(engineNameItem))
                         {
                             ScreenTextDisp_[10].supply("`");
                         }
@@ -316,8 +655,9 @@ public class ConChat
         ScreenTextDisp_[10].supplyLine(" `clear` - clear the current context");
         ScreenTextDisp_[10].supplyLine(" `exit` - exit from this application");
         ScreenTextDisp_[10].supplyLine(" `repaint` - repaint the interface after terminal resize or change cell width");
-        ScreenTextDisp_[10].supplyLine(" `copy` - copy the current message to edit field");
+        ScreenTextDisp_[10].supplyLine(" `copy` - copy the last question to edit field");
         ScreenTextDisp_[10].supplyLine(" `historyunit` - change the history message count unit");
+        ScreenTextDisp_[10].supplyLine(" `counter` - switch display between counter, price and cost");
         ScreenTextDisp_[10].supplyLine(" `counterreset` - reset the token counter for the selected model");
         ScreenTextDisp_[10].supplyLine(" `archive` - archive the current context");
         ScreenTextDisp_[10].supplyLine(" `archdelete` - delete last created or restored archive");
@@ -340,6 +680,7 @@ public class ConChat
         ScreenTextDisp_[10].supplyLine(" `t_` - temperature x100 (from 0 to 200): " + CommonTools.intIsSpecified(CF.ParamGetI("Temperature"), 0, 200));
         ScreenTextDisp_[10].supplyLine(" `n_` - nucleus sampling x100 (from 0 to 100): " + CommonTools.intIsSpecified(CF.ParamGetI("TopP"), 0, 100));
         ScreenTextDisp_[10].supplyLine(" `w_` - waiting timeout: " + CommonTools.intLimited(CF.ParamGetI("WaitTimeout")));
+        ScreenTextDisp_[10].supplyLine(" `m_` - message width percent: " + CommonTools.intLimited(CF.ParamGetI("MarkdownMessageWidth")));
         ScreenTextDisp_[10].supplyLine(" `c_` - cell width in table: " + CommonTools.intLimited(CF.ParamGetI("MarkdownCellWidth")));
         //ScreenTextDisp_[10].supplyLine(" `l_` - log requests/responses (0, 1, 2): " + (CF.ParamGetB("Log") ? "Yes" : "No") + ((CF.ParamGetI("Log") == 2) ? ", clear" : ""));
         ScreenTextDisp_[10].supplyLine("");
@@ -350,22 +691,37 @@ public class ConChat
         for (int i = 0; i < EngineName.size(); i++)
         {
             String engineNameItem = EngineName.get(i);
-            ScreenTextDisp_[10].supply("*    ");
+            String engineNameFavNum = modelInfoFavNumber(engineNameItem, false);
+            if (engineNameFavNum.equals("-1"))
+            {
+                ScreenTextDisp_[10].supply("\\*$$    ");
+            }
+            else
+            {
+                ScreenTextDisp_[10].supply(engineNameFavNum);
+                ScreenTextDisp_[10].supply("$$");
+                ScreenTextDisp_[10].supply(CommonTools.stringIndent(5 - engineNameFavNum.length(), ' '));
+            }
+            
             if (ChatEngine.isValidEngine(engineNameItem))
             {
-                if (engineName.equals(engineNameItem))
+                if (modelTalkList.contains(engineNameItem))
                 {
-                    ScreenTextDisp_[10].supply("`");
+                    ScreenTextDisp_[10].supply("$$`");
                 }
                 else
                 {
-                    ScreenTextDisp_[10].supply("$$");
+                    ScreenTextDisp_[10].supply("");
                 }
                 ScreenTextDisp_[10].supply(engineNameItem);
                 ScreenTextDisp_[10].supply(CommonTools.stringIndent(engineNameLength - engineNameItem.length(), ' '));
-                ScreenTextDisp_[10].supply(" " + CommonTools.intToStr(CFC.ParamGetI(engineNameItem + "-i", 0), counterSizeI));
-                ScreenTextDisp_[10].supply(" " + CommonTools.intToStr(CFC.ParamGetI(engineNameItem + "-o", 0), counterSizeO));
-                if (engineName.equals(engineNameItem))
+                ScreenTextDisp_[10].supply(" " + CommonTools.intToStr(getTokenCounter(engineNameItem, 1), counterSizeI));
+                ScreenTextDisp_[10].supply(" " + CommonTools.intToStr(getTokenCounter(engineNameItem, 2), counterSizeO));
+                if (getTokenCounter("", 0) == "3")
+                {
+                    ScreenTextDisp_[10].supply(" " + CommonTools.intToStr(getTokenCounter(engineNameItem, 3), counterSizeT));
+                }
+                if (modelTalkList.contains(engineNameItem))
                 {
                     ScreenTextDisp_[10].supply("`");
                 }
@@ -376,7 +732,7 @@ public class ConChat
             }
             else
             {
-                ScreenTextDisp_[10].supply("`" + engineNameItem + "`");
+                ScreenTextDisp_[10].supply("$$`" + engineNameItem + "`");
             }
             ScreenTextDisp_[10].supplyLine("");
         }
@@ -441,6 +797,16 @@ public class ConChat
             refreshSettingText();
             return false;
         }
+        if (cmd.equals("counter"))
+        {
+            int t = CF.ParamGetI("Counter");
+            t = t + 1;
+            if (t == 3) t = 0;
+            CF.ParamSet("Counter", t);
+            CF.FileSave(CommonTools.applDir + CommonTools.configFileName);
+            refreshSettingText();
+            return false;
+        }
         if (cmd.equals("counterreset"))
         {
             CFC.ParamRemove(CF.ParamGetS("Model") + "-i");
@@ -449,10 +815,47 @@ public class ConChat
             refreshSettingText();
             return false;
         }
+        if (cmd.startsWith("pricei"))
+        {
+            int priceVal = CommonTools.strToInt(cmd.substring(6), 0);
+            if (priceVal > 0)
+            {
+                CFC.ParamSet(CF.ParamGetS("Model") + "-ii", priceVal);
+            }
+            else
+            {
+                CFC.ParamRemove(CF.ParamGetS("Model") + "-ii");
+            }
+            CFC.FileSave(CommonTools.applDir + CommonTools.counterFileName);
+            refreshSettingText();
+            return false;
+        }
+        if (cmd.startsWith("priceo"))
+        {
+            int priceVal = CommonTools.strToInt(cmd.substring(6), 0);
+            if (priceVal > 0)
+            {
+                CFC.ParamSet(CF.ParamGetS("Model") + "-oo", priceVal);
+            }
+            else
+            {
+                CFC.ParamRemove(CF.ParamGetS("Model") + "-oo");
+            }
+            CFC.FileSave(CommonTools.applDir + CommonTools.counterFileName);
+            refreshSettingText();
+            return false;
+        }
         if (cmd.equals("copy"))
         {
             ScreenTextInput_.reset();
-            ScreenTextInput_.textValue = ScreenTextDisp.convMultiToSingle(ScreenTextDisp_[workContext].getCurrentMessage());
+            if (workState == 0)
+            {
+                ScreenTextInput_.textValue = ScreenTextDisp.convMultiToSingle(ScreenTextDisp_[workContext].getLastQuestion(false));
+            }
+            if (workState == 1)
+            {
+                ScreenTextInput_.textValue = "~" + CF.ParamGetS("Hint" + workContext);
+            }
             ScreenTextInput_.textPos = -1;
             return false;
         }
@@ -473,43 +876,74 @@ public class ConChat
             refreshSettingText();
             return false;
         }
-        if (cmd.equals("repaint"))
+        if (cmd.equals("repaint") || cmd.equals("repaint_1") || cmd.equals("repaint_2"))
         {
-            ConsoleInputOutput_.screenClear();
-            ConsoleInputOutput_.getScreenSize();
-            int inputBoxHeight_ = CF.ParamGetI("FieldSize");
-            if (inputBoxHeight_ < 1) inputBoxHeight_ = 1;
-            if ((ConsoleInputOutput_.screenHeight % 2) == 0)
+            boolean repaint1 = cmd.equals("repaint") || cmd.equals("repaint_1");
+            boolean repaint2 = cmd.equals("repaint") || cmd.equals("repaint_2");
+            if (repaint1)
             {
-                inputBoxHeight = inputBoxHeight_ + ((inputBoxHeight_ + 1) % 2);
-            }
-            else
-            {
-                inputBoxHeight = inputBoxHeight_ + (inputBoxHeight_ % 2);
-            }
-            
-            ConsoleInputOutput_.charSizeReset(CF.ParamGetB("MarkdownDuospace"));
-            ScreenTextDisp.displayResize(ConsoleInputOutput_.screenHeight - inputBoxHeight);
-            for (int i = 0; i < (workContextCount + 1); i++)
-            {
-                ScreenTextDisp_[i].textWidth = ConsoleInputOutput_.screenWidth;
-                ScreenTextDisp_[i].textHeight = ConsoleInputOutput_.screenHeight - inputBoxHeight;
-                ScreenTextDisp_[i].textOffsetLine = ((ScreenTextDisp_[i].textHeight - 1) / 2);
-                if (i < workContextCount)
+                ConsoleInputOutput_.screenClear();
+                ConsoleInputOutput_.getScreenSize();
+                ConsoleInputOutput_.screenWidth -= (ConsoleInputOutput_.screenWidth % 2);
+                int inputBoxHeight_ = CF.ParamGetI("FieldSize");
+                if (inputBoxHeight_ < 1) inputBoxHeight_ = 1;
+                if ((ConsoleInputOutput_.screenHeight % 2) == 0)
                 {
-                    contextReload(i, true);
+                    inputBoxHeight = inputBoxHeight_ + ((inputBoxHeight_ + 1) % 2);
                 }
+                else
+                {
+                    inputBoxHeight = inputBoxHeight_ + (inputBoxHeight_ % 2);
+                }
+
+                ConsoleInputOutput_.charSizeReset(CF.ParamGetB("MarkdownDuospace"));
+                int messageWidth = CF.ParamGetI("MarkdownMessageWidth");
+                if ((messageWidth <= 0) || (messageWidth > 100))
+                {
+                    messageWidth = 100;
+                    CF.ParamSet("MarkdownMessageWidth", 100);
+                }
+                ScreenTextDisp.displayResize(ConsoleInputOutput_.screenHeight - inputBoxHeight);
             }
+            if (repaint2)
+            {
+                modelTalkListUpdate();
+                int messageWidth = CF.ParamGetI("MarkdownMessageWidth");
+                if ((messageWidth <= 0) || (messageWidth > 100))
+                {
+                    messageWidth = 100;
+                    CF.ParamSet("MarkdownMessageWidth", 100);
+                }
+                for (int i = 0; i < (workContextCount + 1); i++)
+                {
+                    ScreenTextDisp_[i].textWidth = ConsoleInputOutput_.screenWidth;
+                    if (i == workContextCount)
+                    {
+                        ScreenTextDisp_[i].textMessageWidth = ScreenTextDisp_[i].textWidth;
+                    }
+                    else
+                    {
+                        ScreenTextDisp_[i].textMessageWidth = (ScreenTextDisp_[i].textWidth * messageWidth) / 100;
+                        ScreenTextDisp_[i].textMessageWidth -= (ScreenTextDisp_[i].textMessageWidth % 2);
+                    }
+                    ScreenTextDisp_[i].textHeight = ConsoleInputOutput_.screenHeight - inputBoxHeight;
+                    ScreenTextDisp_[i].textOffsetLine = ((ScreenTextDisp_[i].textHeight - 1) / 2);
+                    if (i < workContextCount)
+                    {
+                        contextReload(i, true);
+                    }
+                }
 
 
-            ScreenTextInput_.fieldPos = ConsoleInputOutput_.screenHeight - inputBoxHeight;
-            ScreenTextInput_.fieldSize = inputBoxHeight;
-            ScreenTextInput_.reset();
-            
+                ScreenTextInput_.fieldPos = ConsoleInputOutput_.screenHeight - inputBoxHeight;
+                ScreenTextInput_.fieldSize = inputBoxHeight;
+                ScreenTextInput_.reset();
+            }
             return false;
         }
         if (cmd.equals("markdowntest"))
         {
+            modelTalkListUpdate();
             for (int i = 0; i < (workContextCount + 1); i++)
             {
                 ScreenTextDisp_[i].parseMarkdown = !ScreenTextDisp_[i].parseMarkdown;
@@ -525,6 +959,7 @@ public class ConChat
         {
             CF.ParamSet("MarkdownHeader", cmd.substring(14));
             CF.FileSave(CommonTools.applDir + CommonTools.configFileName);
+            modelTalkListUpdate();
             for (int i = 0; i < workContextCount; i++)
             {
                 contextReload(i, true);
@@ -536,6 +971,7 @@ public class ConChat
             CF.ParamSet("MarkdownDuospace", false);
             CF.FileSave(CommonTools.applDir + CommonTools.configFileName);
             ConsoleInputOutput_.charSizeReset(false);
+            modelTalkListUpdate();
             for (int i = 0; i < workContextCount; i++)
             {
                 contextReload(i, true);
@@ -547,6 +983,7 @@ public class ConChat
             CF.ParamSet("MarkdownDuospace", true);
             CF.FileSave(CommonTools.applDir + CommonTools.configFileName);
             ConsoleInputOutput_.charSizeReset(true);
+            modelTalkListUpdate();
             for (int i = 0; i < workContextCount; i++)
             {
                 contextReload(i, true);
@@ -557,9 +994,9 @@ public class ConChat
         return true;
     }
     
-    static void updateEngineList(boolean getFromServer, boolean updateListFile, ChatEngine e1, ChatEngine e2, ChatEngine e3)
+    static void updateEngineList(boolean getFromServer, boolean updateListFile, ChatEngine e1, ChatEngine e2, ChatEngine e3, ChatEngine ex)
     {
-        waitStart(0);
+        waitStart(0, "");
 
         if (updateListFile)
         {
@@ -576,72 +1013,40 @@ public class ConChat
 
         boolean engineListError = false;
         
-        ArrayList<String> engines1 = e1.getEngines(getFromServer);
-        for (int i = 0; i < engines1.size(); i++)
+        ChatEngine eList[] = new ChatEngine[4];
+        String eListS[] = new String[4];
+        eList[0] = ex;
+        eList[1] = e1;
+        eList[2] = e2;
+        eList[3] = e3;
+        eListS[0] = "0";
+        eListS[1] = "1";
+        eListS[2] = "2";
+        eListS[3] = "3";
+        
+        for (int eListI = 0; eListI < 4; eListI++)
         {
-            if (ChatEngine.isValidEngine(engines1.get(i)))
+            ArrayList<String> engines = eList[eListI].getEngines(getFromServer);
+            for (int i = 0; i < engines.size(); i++)
             {
-                if (e1.testEngine(engines1.get(i)))
+                if (ChatEngine.isValidEngine(engines.get(i)))
                 {
-                    if (updateListFile)
+                    if (eList[eListI].testEngine(engines.get(i)))
                     {
-                        CommonTools.fileSaveText(CommonTools.applDir + CommonTools.modelsFileName, "1" + engines1.get(i) + "\n");
+                        if (updateListFile)
+                        {
+                            CommonTools.fileSaveText(CommonTools.applDir + CommonTools.modelsFileName, eListS[eListI] + engines.get(i) + "\n");
+                        }
+                        EngineName.add(engines.get(i));
+                        EngineFav.add(-1);
                     }
-                    EngineName.add(engines1.get(i));
-                    EngineFav.add(-1);
                 }
-            }
-            else
-            {
-                EngineName.add(engines1.get(i));
-                EngineFav.add(-1);
-                engineListError = true;
-            }
-        }
-
-        ArrayList<String> engines2 = e2.getEngines(getFromServer);
-        for (int i = 0; i < engines2.size(); i++)
-        {
-            if (ChatEngine.isValidEngine(engines2.get(i)))
-            {
-                if (e2.testEngine(engines2.get(i)))
+                else
                 {
-                    if (updateListFile)
-                    {
-                        CommonTools.fileSaveText(CommonTools.applDir + CommonTools.modelsFileName, "2" + engines2.get(i) + "\n");
-                    }
-                    EngineName.add(engines2.get(i));
+                    EngineName.add(engines.get(i));
                     EngineFav.add(-1);
+                    engineListError = true;
                 }
-            }
-            else
-            {
-                EngineName.add(engines2.get(i));
-                EngineFav.add(-1);
-                engineListError = true;
-            }
-        }
-
-        ArrayList<String> engines3 = e3.getEngines(getFromServer);
-        for (int i = 0; i < engines3.size(); i++)
-        {
-            if (ChatEngine.isValidEngine(engines3.get(i)))
-            {
-                if (e3.testEngine(engines3.get(i)))
-                {
-                    if (updateListFile)
-                    {
-                        CommonTools.fileSaveText(CommonTools.applDir + CommonTools.modelsFileName, "3" + engines3.get(i) + "\n");
-                    }
-                    EngineName.add(engines3.get(i));
-                    EngineFav.add(-1);
-                }
-            }
-            else
-            {
-                EngineName.add(engines3.get(i));
-                EngineFav.add(-1);
-                engineListError = true;
             }
         }
 
@@ -661,7 +1066,54 @@ public class ConChat
         refreshSettingText();
     }
     
-    static void sendSettingsCommand(String cmd, ChatEngine e1, ChatEngine e2, ChatEngine e3, boolean configSave)
+    static void setEngine(String cmd, ChatEngine e1, ChatEngine e2, ChatEngine e3, ChatEngine ex, boolean configSave)
+    {
+        e1.setEngine(cmd.trim());
+        e2.setEngine(cmd.trim());
+        e3.setEngine(cmd.trim());
+        ex.setEngine(cmd.trim());
+        
+        e1.setHint(CF.ParamGetS("Hint" + workContext));
+        e2.setHint(CF.ParamGetS("Hint" + workContext));
+        e3.setHint(CF.ParamGetS("Hint" + workContext));
+        ex.setHint(CF.ParamGetS("Hint" + workContext));
+
+        if (e1.isActive)
+        {
+            e2.isActive = false;
+            e3.isActive = false;
+            ex.isActive = false;
+            CF.ParamSet("Model", e1.engineName);
+            if (configSave) CF.FileSave(CommonTools.applDir + CommonTools.configFileName);
+        }
+        else
+        {
+            if (e2.isActive)
+            {
+                e3.isActive = false;
+                ex.isActive = false;
+                CF.ParamSet("Model", e2.engineName);
+                if (configSave) CF.FileSave(CommonTools.applDir + CommonTools.configFileName);
+            }
+            else
+            {
+                if (e3.isActive)
+                {
+                    ex.isActive = false;
+                    CF.ParamSet("Model", e3.engineName);
+                    if (configSave) CF.FileSave(CommonTools.applDir + CommonTools.configFileName);
+                }
+                else
+                {
+                    ex.isActive = true;
+                    CF.ParamSet("Model", ex.engineName);
+                    if (configSave) CF.FileSave(CommonTools.applDir + CommonTools.configFileName);
+                }
+            }
+        }
+    }
+    
+    static void sendSettingsCommand(String cmd, ChatEngine e1, ChatEngine e2, ChatEngine e3, ChatEngine ex, boolean configSave)
     {
         int opt = 0;
         int S_num = 0;
@@ -725,6 +1177,13 @@ public class ConChat
                         CommonTools.fileClear(CommonTools.applDir + CommonTools.logFileName);
                     }
                     break;*/
+                case 'm':
+                    if (S_num >= 0)
+                    {
+                        CF.ParamSet("MarkdownMessageWidth", S_num);
+                        if (configSave) CF.FileSave(CommonTools.applDir + CommonTools.configFileName);
+                    }
+                    break;
                 case 'c':
                     if (S_num >= 0)
                     {
@@ -733,6 +1192,30 @@ public class ConChat
                         for (int i = 0; i < (workContextCount + 1); i++)
                         {
                             ScreenTextDisp_[i].tableCellWidth = CF.ParamGetI("MarkdownCellWidth");
+                        }
+                    }
+                    break;
+                case '.':
+                case ',':
+                    {
+                        String modelList = "";
+                        boolean modelListValid = true;
+                        for (int i = 1; i < cmd.length(); i++)
+                        {
+                            if (CommonTools.isChar(cmd.charAt(i), false, false, true, false))
+                            {
+                                modelList = modelList + cmd.charAt(i);
+                            }
+                            else
+                            {
+                                modelListValid = false;
+                            }
+                        }
+                        if ((modelListValid) && (!modelList.isEmpty()))
+                        {
+                            CF.ParamSet("Model", modelList);
+                            if (configSave) CF.FileSave(CommonTools.applDir + CommonTools.configFileName);
+                            opt = 9;
                         }
                     }
                     break;
@@ -772,7 +1255,13 @@ public class ConChat
                     {
                         if (!ScreenTextDisp_[workContext].getMessageInfo("").isBlank())
                         {
-                            cmd = ScreenTextDisp_[workContext].getMessageInfo("");
+                            cmd = modelInfoFromMessage(ScreenTextDisp_[workContext].getMessageInfo(""), 10);
+                            if (CommonTools.strOnlyDigits(cmd))
+                            {
+                                CF.ParamSet("Model", cmd);
+                                if (configSave) CF.FileSave(CommonTools.applDir + CommonTools.configFileName);
+                                cmd = "";
+                            }
                         }
                         else
                         {
@@ -783,31 +1272,8 @@ public class ConChat
                 
                 if (!cmd.isBlank())
                 {
-                    e1.setEngine(cmd);
-                    e2.setEngine(cmd);
-                    e3.setEngine(cmd);
-
-                    if (e1.isActive)
-                    {
-                        e2.isActive = false;
-                        e3.isActive = false;
-                        CF.ParamSet("Model", e1.engineName);
-                        if (configSave) CF.FileSave(CommonTools.applDir + CommonTools.configFileName);
-                    }
-                    else
-                    {
-                        if (e2.isActive)
-                        {
-                            e3.isActive = false;
-                            CF.ParamSet("Model", e2.engineName);
-                            if (configSave) CF.FileSave(CommonTools.applDir + CommonTools.configFileName);
-                        }
-                        else
-                        {
-                            CF.ParamSet("Model", e3.engineName);
-                            if (configSave) CF.FileSave(CommonTools.applDir + CommonTools.configFileName);
-                        }
-                    }
+                    cmd = CommonTools.modelNameBlankCharRemove(cmd);
+                    setEngine(cmd, e1, e2, e3, ex, configSave);
                 }
                 
                 
@@ -815,6 +1281,7 @@ public class ConChat
                 {
                     if (archFileId.get(i).equals(cmd))
                     {
+                        modelTalkListUpdate();
                         archFileLast = archFileName.get(i);
                         ScreenTextDisp_[workContext].clear(false);
                         CommonTools.fileCopy(CommonTools.applDir + archFileLast, ScreenTextDisp_[workContext].fileName);
@@ -844,6 +1311,57 @@ public class ConChat
         if (configSave) CF.FileSave(CommonTools.applDir + CommonTools.configFileName);
         refreshSettingText();
         ScreenTextDisp_[workContext].displayAll();
+    }
+    
+    static boolean questionIsHint(String Hint)
+    {
+        if (Hint.length() < 1)
+        {
+            return false;
+        }
+        char hintChar = Hint.charAt(0);
+        boolean isHint = false;
+        if (hintChar == '`') isHint = true;
+        if (hintChar == '~') isHint = true;
+        if (isHint)
+        {
+            for (int i = 1; i < Hint.length(); i++)
+            {
+                if (Hint.charAt(i) == hintChar) return false;
+            }
+        }
+        return isHint;
+    }
+    
+    static String questionGetHint(String Hint)
+    {
+        if (Hint.length() < 1)
+        {
+            return "";
+        }
+        return Hint.substring(1).trim();
+    }
+    
+    static void questionSetHint(String Question_)
+    {
+        String Hint = questionGetHint(Question_);
+        if ((Hint.length() == 2) && CommonTools.strOnlyDigits(Hint))
+        {
+            int ctxSrc = (((int)Hint.charAt(0)) - 48);
+            int ctxDst = (((int)Hint.charAt(1)) - 48);
+            String h = CF.ParamGetS("Hint" + ctxSrc);
+            CF.ParamSet("Hint" + ctxDst, h);
+        }
+        else
+        {
+            CF.ParamSet("Hint" + workContext, Hint);
+        }
+        CF.FileSave(CommonTools.applDir + CommonTools.configFileName);
+        if (workState == 1)
+        {
+            refreshSettingText();
+            ScreenTextDisp_[workContextCount].displayAll();
+        }
     }
     
     /**
@@ -891,6 +1409,7 @@ public class ConChat
         archFileName = new ArrayList<>();
         archFileId = new ArrayList<>();
         archFileNumber = new ArrayList<>();
+        modelTalkList = new ArrayList<>();
         
         try
         {
@@ -941,12 +1460,13 @@ public class ConChat
         }
 
         
-        isStandardCommand("repaint");
         
         ChatEngine ChatEngineGpt_ = new ChatEngineGpt(CF, CFC);
         ChatEngine ChatEngineGemini_ = new ChatEngineGemini(CF, CFC);
         ChatEngine ChatEngineClaude_ = new ChatEngineClaude(CF, CFC);
+        ChatEngine ChatEngineDummy_ = new ChatEngine(CF, CFC);
 
+        isStandardCommand("repaint_1");
         
         ArrayList<String> fileModelNames = CommonTools.fileLoadText(CommonTools.applDir + CommonTools.modelsFileName, false);
         if (fileModelNames.size() > 0)
@@ -954,11 +1474,16 @@ public class ConChat
             ChatEngineGpt_.setEngineItem(null);
             ChatEngineGemini_.setEngineItem(null);
             ChatEngineClaude_.setEngineItem(null);
+            ChatEngineDummy_.setEngineItem(null);
             for (int i = 0; i < fileModelNames.size(); i++)
             {
                 String engineNameItem = fileModelNames.get(i);
                 if ((engineNameItem.length() > 1) && (ChatEngine.isValidEngine(engineNameItem.substring(1))))
                 {
+                    if (engineNameItem.startsWith("0"))
+                    {
+                        ChatEngineDummy_.setEngineItem(engineNameItem.substring(1));
+                    }
                     if (engineNameItem.startsWith("1"))
                     {
                         ChatEngineGpt_.setEngineItem(engineNameItem.substring(1));
@@ -973,21 +1498,23 @@ public class ConChat
                     }
                 }
             }
-            updateEngineList(false, false, ChatEngineGpt_, ChatEngineGemini_, ChatEngineClaude_);
+            updateEngineList(false, false, ChatEngineGpt_, ChatEngineGemini_, ChatEngineClaude_, ChatEngineDummy_);
         }
         else
         {
-            updateEngineList(true, true, ChatEngineGpt_, ChatEngineGemini_, ChatEngineClaude_);
+            updateEngineList(true, true, ChatEngineGpt_, ChatEngineGemini_, ChatEngineClaude_, ChatEngineDummy_);
         }
         
+        isStandardCommand("repaint_2");
         
 
-        sendSettingsCommand(CF.ParamGetS("Model"), ChatEngineGpt_, ChatEngineGemini_, ChatEngineClaude_, false);
+        sendSettingsCommand(CommonTools.modelNameBlankCharS + CF.ParamGetS("Model") + CommonTools.modelNameBlankCharS, ChatEngineGpt_, ChatEngineGemini_, ChatEngineClaude_, ChatEngineDummy_, false);
         
         
         ConsoleInputOutput_.ringBell();
 
         
+        ArrayList<TalkObject> engineTalkList = new ArrayList<>();
         
         
         ScreenTextDisp_[workContext].displayAll();
@@ -1048,7 +1575,7 @@ public class ConChat
                     case 9:
                         if (workState == 0)
                         {
-                            ScreenTextDisp_[ctx].ommitSwitch();
+                            ScreenTextDisp_[ctx].ommitSwitch(-1);
                         }
                         break;
                     default:
@@ -1086,94 +1613,215 @@ public class ConChat
             {
                 if (isStandardCommand(S))
                 {
-                    switch (workState)
+                    if (questionIsHint(S))
                     {
-                        case 0: // Use chat
-                            if (S.length() == 1)
-                            {
-                                if ((S.charAt(0) >= 48) && (S.charAt(0) <= 57))
+                        questionSetHint(S);
+                    }
+                    else
+                    {
+                        switch (workState)
+                        {
+                            case 0: // Use chat
+                                if (S.length() == 1)
                                 {
-                                    selectContext(((int)S.charAt(0)) - 48, true);
+                                    if ((S.charAt(0) >= 48) && (S.charAt(0) <= 57))
+                                    {
+                                        selectContext(((int)S.charAt(0)) - 48, true);
+                                    }
                                 }
-                            }
-                            else
-                            {
-                                int tokensI = 0;
-                                int tokensO = 0;
-                                String tokensE = "";
-                                S = ScreenTextDisp.convSingleToMulti(S_);
-                                S = ScreenTextDisp.convPlainToMarkdown(S);
-                                S = ScreenTextDisp.convMarkdownToPlain(S);
-                                
-                                ScreenTextDisp_[ctx].supplyPointSave();
-                                ScreenTextDisp_[ctx].supplyLine("");
-                                ScreenTextDisp_[ctx].messageIdxCounter = -1;
-                                ScreenTextDisp_[ctx].supplyLine("___<<<>>>___");
-                                ScreenTextDisp_[ctx].supplyLine("");
-                                ScreenTextDisp_[ctx].supplyLine(ScreenTextDisp.convPlainToMarkdown(S));
-                                ScreenTextDisp_[ctx].supplyLine("");
-                                ScreenTextDisp_[ctx].displayScrollDn(-1);
-
-                                waitStart(CF.ParamGetI("WaitTimeout"));
-                                String SS = "?";
-                                if (ChatEngineGpt_.isActive)
+                                else
                                 {
-                                    SS = ChatEngineGpt_.chatTalk(ScreenTextDisp_[ctx].textMsg, S, false);
-                                    tokensI = ChatEngineGpt_.tokensI;
-                                    tokensO = ChatEngineGpt_.tokensO;
-                                    tokensE = ChatEngineGpt_.tokensE;
+                                    S = ScreenTextDisp.convSingleToMulti(S_);
+                                    S = ScreenTextDisp.convPlainToMarkdown(S);
+                                    S = ScreenTextDisp.convMarkdownToPlain(S);
+
+                                    boolean engineMulti = modelTalkListUpdate();
+                                    String totalTokensInfo = "";
+                                    for (int engineI = 0; engineI < modelTalkList.size(); engineI++)
+                                    {
+                                        if (engineI > 0)
+                                        {
+                                            totalTokensInfo = totalTokensInfo + CommonTools.splitterInfo;
+                                        }
+                                        totalTokensInfo = totalTokensInfo + "1" + CommonTools.splitterInfo + modelTalkList.get(engineI);
+                                    }
+
+
+                                    int questionPrevIdx = CommonTools.strToInt(ScreenTextDisp_[workContext].getLastQuestion(true), -1);
+                                    String questionPrev = ScreenTextDisp.convMultiToSingle(ScreenTextDisp_[workContext].getLastQuestion(false));
+                                    String questionNext = ScreenTextDisp.convMultiToSingle(S);
+                                    boolean questionTheSame = questionPrev.equals(questionNext);
+
+
+                                    if (questionTheSame)
+                                    {
+                                        ScreenTextDisp_[ctx].supplyPointSave();
+                                        ScreenTextDisp_[ctx].displayScrollDn(-1);
+                                        ScreenTextDisp_[ctx].supplyPointRestore();
+                                    }
+                                    else
+                                    {
+                                        ScreenTextDisp_[ctx].supplyPointSave();
+                                        ScreenTextDisp_[ctx].supplyLine("");
+                                        ScreenTextDisp_[ctx].messageIdxCounter = -1;
+                                        ScreenTextDisp_[ctx].supplyLine("___<<<" + totalTokensInfo + ">>>___");
+                                        ScreenTextDisp_[ctx].supplyLine("");
+                                        ScreenTextDisp_[ctx].supplyLine(ScreenTextDisp.convPlainToMarkdown(S));
+                                        ScreenTextDisp_[ctx].supplyLine("");
+                                        ScreenTextDisp_[ctx].displayScrollDn(-1);
+                                        ScreenTextDisp_[ctx].supplyPointRestore();
+                                    }
+
+
+                                    while (engineTalkList.size() < modelTalkList.size())
+                                    {
+                                        engineTalkList.add(new TalkObject(modelTalkList.get(engineTalkList.size()), ChatEngineGpt_, ChatEngineGemini_, ChatEngineClaude_, ChatEngineDummy_));
+                                    }
+                                    while (engineTalkList.size() > modelTalkList.size())
+                                    {
+                                        engineTalkList.remove(modelTalkList.size());
+                                    }
+                                    for (int iii = 0; iii < modelTalkList.size(); iii++)
+                                    {
+                                        engineTalkList.get(iii).engineName = modelTalkList.get(iii);
+                                    }
+
+                                    String engineCurrentModel = CF.ParamGetS("Model");
+
+                                    // Auto ommit prevoius answers when the question is repeated
+                                    ArrayList<Integer> questionTheSameOmmitList = null;
+                                    if (questionTheSame)
+                                    {
+                                        questionTheSameOmmitList = new ArrayList<>();
+                                        int iN = ScreenTextDisp_[ctx].textMsg.size();
+                                        for (int i = questionPrevIdx; i < iN; i++)
+                                        {
+                                            if (!ScreenTextDisp_[ctx].textMsg.get(i).ommit)
+                                            {
+                                                questionTheSameOmmitList.add(i);
+                                                ScreenTextDisp_[ctx].textMsg.get(i).ommit = true;
+                                                //ScreenTextDisp_[ctx].ommitSwitch(i);
+                                            }
+                                        }
+                                    }
+
+                                    // Prepare talk
+                                    for (int engineI = 0; engineI < engineTalkList.size(); engineI++)
+                                    {
+                                        setEngine(engineTalkList.get(engineI).engineName, ChatEngineGpt_, ChatEngineGemini_, ChatEngineClaude_, ChatEngineDummy_, false);
+                                        engineTalkList.get(engineI).talkPrepare(ScreenTextDisp_[ctx].textMsg, engineMulti ? (engineTalkList.get(engineI).engineName) : "", S);
+                                    }
+
+
+
+                                    // Execute talk
+                                    /*for (int engineI = 0; engineI < engineTalkList.size(); engineI++)
+                                    {
+                                        String waitInfo_ = engineMulti ? (" " + (engineI + 1) + "/" + engineTalkList.size()) : "";
+                                        waitStart(CF.ParamGetI("WaitTimeout"), waitInfo_);
+                                        engineTalkList.get(engineI).talk();
+                                        waitStopX();
+                                    }*/
+
+                                    waitStart(CF.ParamGetI("WaitTimeout"), "");
+                                    ExecutorService ExecutorService_ = Executors.newCachedThreadPool();
+
+                                    for (int engineI = 0; engineI < engineTalkList.size(); engineI++)
+                                    {
+                                        engineTalkList.get(engineI).talkThreadStart(ExecutorService_);
+                                    }
+
+                                    for (int engineI = 0; engineI < engineTalkList.size(); engineI++)
+                                    {
+                                        engineTalkList.get(engineI).talkThreadWait();
+                                    }
+
+                                    ExecutorService_.shutdown();
+                                    waitStopX();
+
+
+
+                                    // Measure new characters to avid display glitches
+                                    for (int engineI = 0; engineI < engineTalkList.size(); engineI++)
+                                    {
+                                        for (int i = 0; i < engineTalkList.get(engineI).answer.length(); i++)
+                                        {
+                                            ConsoleInputOutput_.charSize(engineTalkList.get(engineI).answer.charAt(i));
+                                        }
+                                    }                                
+
+
+                                    waitStart(0, "");
+
+                                    if (questionTheSame)
+                                    {
+                                        for (int i = 0; i < questionTheSameOmmitList.size(); i++)
+                                        {
+                                            if (ScreenTextDisp_[ctx].textMsg.get(questionTheSameOmmitList.get(i)).ommit)
+                                            {
+                                                ScreenTextDisp_[ctx].textMsg.get(questionTheSameOmmitList.get(i)).ommit = false;
+                                                //ScreenTextDisp_[ctx].ommitSwitch(questionTheSameOmmitList.get(i));
+                                            }
+                                        }
+                                    }
+
+                                    // Rendering question
+                                    ScreenTextDisp_[ctx].messageIdxCounter = ScreenTextDisp_[ctx].textMsg.size() - 1;
+
+                                    totalTokensInfo = "";
+                                    for (int engineI = 0; engineI < engineTalkList.size(); engineI++)
+                                    {
+                                        if (engineI > 0)
+                                        {
+                                            totalTokensInfo = totalTokensInfo + CommonTools.splitterInfo;
+                                        }
+                                        totalTokensInfo = totalTokensInfo + engineTalkList.get(engineI).tokensI + "" + CommonTools.splitterInfo + engineTalkList.get(engineI).engineName;
+                                    }
+
+                                    if (!questionTheSame)
+                                    {
+                                        ScreenTextDisp_[ctx].supplyLine("");
+                                        ScreenTextDisp_[ctx].messageIdxCounter = ScreenTextDisp_[ctx].textMsg.size();
+                                    }
+                                    int tempMsgTokens = CommonTools.strToInt(ConChat.modelInfoFromMessage("!!!" + totalTokensInfo + "!!!", 8), -1);
+                                    String tempMsgModel = ConChat.modelInfoFromMessage("!!!" + totalTokensInfo + "!!!", 0);
+                                    if (!questionTheSame)
+                                    {
+                                        ScreenTextDisp_[ctx].textMsg.add(new ScreenTextDispMessage(false, S, tempMsgTokens, tempMsgModel));
+                                        ScreenTextDisp_[ctx].supplyLine("___<<<" + totalTokensInfo + "<<<___");
+                                        ScreenTextDisp_[ctx].supplyLine("");
+                                        ScreenTextDisp_[ctx].supplyLine(ScreenTextDisp.convPlainToMarkdown(S));
+                                    }
+
+
+                                    // Rendering answer
+                                    for (int engineI = 0; engineI < engineTalkList.size(); engineI++)
+                                    {
+                                        ScreenTextDisp_[ctx].supplyLine("");
+                                        ScreenTextDisp_[ctx].messageIdxCounter = ScreenTextDisp_[ctx].textMsg.size();
+                                        ScreenTextDisp_[ctx].textMsg.add(new ScreenTextDispMessage(true, engineTalkList.get(engineI).answer, engineTalkList.get(engineI).tokensO, engineTalkList.get(engineI).tokensE));
+                                        ScreenTextDisp_[ctx].supplyLine("___>>>" + engineTalkList.get(engineI).tokensO + "" + CommonTools.splitterInfo + engineTalkList.get(engineI).tokensE + ">>>___");
+                                        ScreenTextDisp_[ctx].supplyLine("");
+                                        ScreenTextDisp_[ctx].supplyLine(engineTalkList.get(engineI).answer);
+                                    }                                
+
+
+                                    waitStop();
+
+                                    CF.ParamSet("Model", engineCurrentModel);
+
+                                    ScreenTextDisp_[ctx].displayAll();
                                 }
-                                if (ChatEngineGemini_.isActive)
+                                break;
+                            case 1: // Settings
                                 {
-                                    SS = ChatEngineGemini_.chatTalk(ScreenTextDisp_[ctx].textMsg, S, false);
-                                    tokensI = ChatEngineGemini_.tokensI;
-                                    tokensO = ChatEngineGemini_.tokensO;
-                                    tokensE = ChatEngineGemini_.tokensE;
+                                    S = S.trim().toLowerCase();
+                                    sendSettingsCommand(S, ChatEngineGpt_, ChatEngineGemini_, ChatEngineClaude_, ChatEngineDummy_, true);
+                                    ScreenTextDisp_[workContextCount].displayAll();
                                 }
-                                if (ChatEngineClaude_.isActive)
-                                {
-                                    SS = ChatEngineClaude_.chatTalk(ScreenTextDisp_[ctx].textMsg, S, false);
-                                    tokensI = ChatEngineClaude_.tokensI;
-                                    tokensO = ChatEngineClaude_.tokensO;
-                                    tokensE = ChatEngineClaude_.tokensE;
-                                }
-                                
+                                break;
 
-                                // Measure new characters to avid display glitches
-                                waitStopX();
-                                for (int i = 0; i < SS.length(); i++)
-                                {
-                                    ConsoleInputOutput_.charSize(SS.charAt(i));
-                                }
-                                waitStop();
-
-                                ScreenTextDisp_[ctx].supplyPointRestore();
-
-                                ScreenTextDisp_[ctx].messageIdxCounter = ScreenTextDisp_[ctx].textMsg.size() - 1;
-                                ScreenTextDisp_[ctx].supplyLine("");
-                                ScreenTextDisp_[ctx].messageIdxCounter = ScreenTextDisp_[ctx].textMsg.size();
-                                ScreenTextDisp_[ctx].textMsg.add(new ScreenTextDispMessage(false, S, tokensI, tokensE));
-                                ScreenTextDisp_[ctx].supplyLine("___<<<" + tokensI + "" + CommonTools.splitterInfo + tokensE + "<<<___");
-                                ScreenTextDisp_[ctx].supplyLine("");
-                                ScreenTextDisp_[ctx].supplyLine(ScreenTextDisp.convPlainToMarkdown(S));
-
-                                ScreenTextDisp_[ctx].supplyLine("");
-                                ScreenTextDisp_[ctx].messageIdxCounter = ScreenTextDisp_[ctx].textMsg.size();
-                                ScreenTextDisp_[ctx].textMsg.add(new ScreenTextDispMessage(true, SS, tokensO, tokensE));
-                                ScreenTextDisp_[ctx].supplyLine("___>>>" + tokensO + "" + CommonTools.splitterInfo + tokensE + ">>>___");
-                                ScreenTextDisp_[ctx].supplyLine("");
-                                ScreenTextDisp_[ctx].supplyLine(SS);
-                                ScreenTextDisp_[ctx].displayAll();
-                            }
-                            break;
-                        case 1: // Settings
-                            {
-                                S = S.trim().toLowerCase();
-                                sendSettingsCommand(S, ChatEngineGpt_, ChatEngineGemini_, ChatEngineClaude_, true);
-                                ScreenTextDisp_[workContextCount].displayAll();
-                            }
-                            break;
-
+                        }
                     }
                 }
                 else
