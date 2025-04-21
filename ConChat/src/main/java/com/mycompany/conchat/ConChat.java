@@ -1040,6 +1040,13 @@ public class ConChat
                         EngineName.add(engines.get(i));
                         EngineFav.add(-1);
                     }
+                    else
+                    {
+                        if (updateListFile)
+                        {
+                            CommonTools.fileSaveText(CommonTools.applDir + CommonTools.modelsFileName, "~" + eListS[eListI] + engines.get(i) + "\n");
+                        }
+                    }
                 }
                 else
                 {

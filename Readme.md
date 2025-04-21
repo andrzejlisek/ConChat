@@ -329,7 +329,7 @@ The bolded character will be measured at the first occurence after application s
 
 The **OpenAI ChatGPT**, **Google Gemini** and **Anthropic Claude** provides several models\. The model list are stored in the **models\.txt** file\. You can edit or update the model list\.
 
-If you want to edit the model silt, siply open the file in the plain text editor\. Every model is in separated line and is preceeded with one of the characters:
+If you want to edit the model list, simply open the file in the plain text editor\. Every model is in separated line and is preceeded with one of the characters:
 
 
 * **1** \- Model to use with **OpenAI ChatGPT**\.
@@ -344,7 +344,7 @@ There are two scenarios depending on the **TestModel** parameter in **config\.tx
 
 
 * **TestModel** is blank \- Every model from the downloaded list will be stored in **models\.txt** and available to select in **Configuration state** even, if the model is not purposed to work with chatbot\.
-* **TestModel** is not blank \- For each moder, there will be send the question provided as **TextModel** parameter\. The model will be considered as valid if the chatbot server give answet for questions\. The answer will not analyzed\. If there is error answer, the model will not inslude and it will be sured, that the list contains usable models only instead of all theoretically available models\. The procedure may take several minutes and consumed tokens will not encountered in token counters\.
+* **TestModel** is not blank \- For each moder, there will be send the question provided as **TextModel** parameter\. The model will be considered as valid if the chatbot server give answet for questions\. The answer will not analyzed\. If there is error answer, the model name will be preceeded with tilde character in **models\.txt** and will not be visible in **ConChat** model list\. The procedure may take several minutes and consumed tokens will not encountered in token counters\. You can include invisible model manually by editing the **models\.txt** file, especially when the model was excluded due to teporary unavailability during the test\.
 
 # Archive context files
 

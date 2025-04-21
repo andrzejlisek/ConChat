@@ -102,7 +102,7 @@ public class ChatEngineClaude extends ChatEngine
                 }
             }
         }
-        if (!engineHint.isEmpty())
+        if ((!testMode) && (!engineHint.isEmpty()))
         {
             requestBody.put("system", engineHint);
         }

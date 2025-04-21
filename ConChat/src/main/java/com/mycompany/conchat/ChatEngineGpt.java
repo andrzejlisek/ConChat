@@ -92,7 +92,7 @@ public class ChatEngineGpt extends ChatEngine
         }
 
         JSONArray messages = new JSONArray();
-        if (!engineHint.isEmpty())
+        if ((!testMode) && (!engineHint.isEmpty()))
         {
             messages.put(new JSONObject().put("role", "system").put("content", engineHint));
         }

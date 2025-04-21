@@ -90,7 +90,7 @@ public class ChatEngineGemini extends ChatEngine
 
         requestBody.put("contents", messages);
 
-        if (!engineHint.isEmpty())
+        if ((!testMode) && (!engineHint.isEmpty()))
         {
             messages_ = new JSONArray();
             messages_.put(new JSONObject().put("text", engineHint));
