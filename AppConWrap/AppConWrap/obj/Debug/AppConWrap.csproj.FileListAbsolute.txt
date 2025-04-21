@@ -1,0 +1,7 @@
+C:\Users\admin2\Desktop\Private\AppConWrap\AppConWrap\AppConWrap\bin\Debug\AppConWrap.exe.config
+C:\Users\admin2\Desktop\Private\AppConWrap\AppConWrap\AppConWrap\bin\Debug\AppConWrap.exe
+C:\Users\admin2\Desktop\Private\AppConWrap\AppConWrap\AppConWrap\bin\Debug\AppConWrap.pdb
+C:\Users\admin2\Desktop\Private\AppConWrap\AppConWrap\AppConWrap\obj\Debug\AppConWrap.csproj.AssemblyReference.cache
+C:\Users\admin2\Desktop\Private\AppConWrap\AppConWrap\AppConWrap\obj\Debug\AppConWrap.csproj.CoreCompileInputs.cache
+C:\Users\admin2\Desktop\Private\AppConWrap\AppConWrap\AppConWrap\obj\Debug\AppConWrap.exe
+C:\Users\admin2\Desktop\Private\AppConWrap\AppConWrap\AppConWrap\obj\Debug\AppConWrap.pdb

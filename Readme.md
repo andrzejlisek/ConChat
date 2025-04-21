@@ -1,6 +1,6 @@
 # ConChat overview
 
-**ConChat** is the simple console application written in Java language and the main purpose is using with **OpenAI ChatGPT**, **Google Gemini** and **Anthropic Claude** services\. The application works natively on Linux and probably will work on every Unix\-like system including MacOs X, but is not tested\. On Windows the application will not work due to Java console support limitations\. Application should work in every operating system, when standard streams are redirected to VT100\-compatible terminal\.
+**ConChat** is the simple console application written in Java language and the main purpose is using with **OpenAI ChatGPT**, **Google Gemini** and **Anthropic Claude** services\. The application works natively on Linux and probably will work on every Unix\-like system including MacOs X, but is not tested\. On Windows the application requires **AppConWrap** to Java console support limitations\. Application should work in every operating system, when standard streams are redirected to VT100\-compatible terminal\.
 
 **ConChat** supports both **ChatGPT**, **Gemini** and **Claude** chatbot service through official REST API\. These APIs is payable and requires indivual API key for use\. In order to use the application, the one of the two services is sufficient, but access to both services gives more LLM engines to use\.
 
@@ -36,6 +36,10 @@ The configuration file **config\.txt** has the following options, the italic opt
 * ***HistoryLimit*** \- Maximum number of history words/characters/messages contained in last history messages \(questions and answers\) sent to chatbot everytime you writes the question\. The **0** value means unlimited history size, but chatbot engine may have own limit\.
 * ***AnswerLimit*** \- Maximum number of answer tokens\. Limited number may limit potential usage cost, but may cause incomplete answer\. The **0** values means unlimited answer size\.
 * ***WaitTimeout*** \- Waiting for answer timeout in seconds\.
+* ***Counter*** \- The information as token counter:
+  * **0** \- Token counter\.
+  * **1** \- Price per million tokens\.
+  * **2** \- Token cost\.
 * **Log** \- The **http\.txt** log file option:
   * **0** \- Do not create the log\.
   * **1** \- Append every request and response to log file, do not clear the file\.
@@ -49,6 +53,7 @@ The configuration file **config\.txt** has the following options, the italic opt
     * The terminal application uses monospace font\.
     * There are problems with character width measurement\.
   * **1** \- Measure non\-ASCII characters\. Use if the conversations contains double\-width characters, like CJK characters i duospace fonts\. Every non\-ASCII character wil be measured\.
+* ***MarkdownMessageWidth*** \- The message width as percent of screen width\.
 * **TestModel** \- Test message to test model validity to text chat while creating model list\. If the text is blank, the test is not performed\.
 
 # ConChat run
@@ -71,6 +76,12 @@ If the directory does not contain the **config\.txt** file or this file does not
 
 In this repository, there is **StartConChat\.sh** file, starts the **ConChat** in Linux\.
 
+For run the application in **Microsoft Windows**, use the **AppConWrap** attached application\. this application runs any other console application with standard stream redirection and react propertly fo keystrokes\.
+
+```
+AppConWrap.exe java -jar ConChat.jar C:\somepath\conchat
+```
+
 # ConChat usage
 
 The GUI consists of two parts\. The top, larger part, is the output screen, the bottom, smaller part is the input text field\. The application has two possible states:
@@ -89,8 +100,13 @@ In both states, everytime you can press these keys:
   * **"clear"** \- Clear the current context \(conversation\)\.
   * **"exit"** \- Exit from **ConChat**\.
   * **"repaint"** \- Repaint the interface after resize\. This command also clears all contextes and reloads them from files\. Use the command even if you change the font typeface in console/terminal application when the contexts contains special characters, which can be double width, like CJK characters\.
-  * **"copy"** \- Copy the current message \(in the middle of the screen\) to edit field\. Then, you can edit this question before send\.
+  * **"copy"** \- Copy the current message \(in the middle of the screen\) to edit field\. Then, you can edit this question before send\. There are two possible cases:
+    * **Question is modified** \- After **Enter** key, the question will be send as next question\.
+    * **Question is not modified** \- After **Enter** key, the question will be send without repeating and without answers after last occurence of this question\.
+  * **"counter"** \- Switch between token counter and estimated token cost\.
   * **"counterreset"** \- Reset the token counter for the currently selected model\.
+  * **"pricei?"** \- Set the price per million input tokens\. The price is multiplied by ten thousand\. In you want to set the price to **1\.2345**, input **pricei12345**\.
+  * **"priceo?"** \- Set the price per million output tokens\.
   * **"archive"** \- Archive the current context to file\. The physical file will by named by **contextXYZ\.txt**, where XYZ is current date/time stamp written by 14 digits\.
   * **"archdelete"** \- Delete last created or restored archive, which is highlighted\.
   * **"markdownheader?"** \- Use the digit from **1** to **7** instead of **?** character\. Changes the header display threshold as following examples:
@@ -135,7 +151,10 @@ In this stare, there are displayed following information:
 * Frequently used configuration parameters and one\-letter commands for change this parameters\.
 * List of favorite models, which are available and included in **Favorite** parameter in **config\.txt** file\. These models are numbered for ease change\.
 * List of archive context files treated as further items on favorite model list\.
-* List of available models with token counter\. These models are in **models\.txt** file\. The counter consists of input tokens and output tokens\.
+* List of available models with token counter\. These models are in **models\.txt** file\. The counter is in one of the three states, changed by the **counter** command:
+  * Input tokens and output token quantity\.
+  * Price per million input tokens and price per output tokens, prices with four decimal places\. The prices can be changed by **pricei1234** and **priceo1234** commands, where **1234** is the price without decimal point\.
+  * Cost amount for input tokens, for output tokesn and total amount, with dwo decimal places\.
 
 The one\-letter commands consists of single letter \(case insensitive\) and one number\. For instance, in order to set the temperature to **100**, input **t100** and press **Enter**\. In order to set waiting timeout to one minute \(60 seconds\), input **w60** and press Enter\. The value will be automatically updated\.
 
@@ -147,7 +166,94 @@ There are two ways to change the current model or restore archive context:
 
 The currently selected model is highlighted\. The archive context will be highlighted after restored\.
 
-## Duospace fonts
+# Group conversation with several models
+
+You can perform the group conversation with models placed as first 9 favorite models\. There are differences between group conversation and normal conversation:
+
+| Feature | Normal conversation | Group conversation |
+| --- | --- | --- |
+| Available models | Every model \(favorite or other model\) | Set of favorite models from 1 to 10 |
+| Use or ommit message | Manual only | Automatic with model name match |
+| Auto ommit indication | Clear and explicit | Parial usage indicated as unommited |
+| Context messages | All unommited | Messages using the model included with group |
+
+The conversation type can be switched by model select in **Configuration state**\.
+
+If you want to switch into normal conversation, select the model by input the number or name\. For example:
+
+
+* **gpt\-4o** \- Select the "gpt\-4o" model, if the model is available\.
+* **12** \- Select the item 12 on favorite list\.
+* **\.o1** \- Select the **o1** model if available\. The dot is required for elliminate the confusion with potential **o\_** parameter\. The preceding dot is ignored in model name\.
+* **o1\.** \- The same as **\.o1** command, which selects the **o1** model\.
+
+If you want to perform the group conversation, use the numbers preceeded with the dot or comma:
+
+
+* **\.1** \- Use the item **1** only in group conversatrion mode, talk into the single model\.
+* **,506** \- Use the items **5**, **10**, **6** in group confersation, the answers will be displayed with the order\.
+* **\.1234567890** \- Use the first 10 favorite models\. There is the largest possible model set in group conversation\.
+
+## Conversation example
+
+Let's assume, that there are three favorite models:
+
+
+1. **m1**
+2. **m2**
+3. **m3**
+
+The conversation can be as following, the first two columns presents the text, which user input and press the **Enter**\.
+
+| Action in operation state | Action in configuration state | Request into server | Effect | Remarks |
+| --- | --- | --- | --- | --- |
+|   | **1** |   | Select **m1** model | Enter into normal conversation\. |
+| **q1** |   | **m1**: q1 | Answer: a1 |   |
+| **q2** |   | **m1**: q1,a1,q2 | Answer: a2 |   |
+|   | **2** |   | Select **m2** model |   |
+| **q3** |   | **m2**: q1,a1,q2,a2,q3 | Answer: a3 | Send all messages regardless used model\. |
+|   | **\.12** |   | Select **m1** and **m2** models | Enter into group conversation\. |
+| **q4** |   | **m1**: q1,a1,q2,a2,q4; **m2**: q3,a3,q4 | From m1: a5, from m2: a6 | In the group conversation, the message must match the model\. |
+|   | **\.2** |   | Select **m2** model | Select single model in group conversation\. |
+| **q5** |   | **m2**: q3,a3,q4,a6,q5 | Answer: a7 | The context must match the model\. |
+|   | **\.23** |   | Select **m2** and **m3** models |   |
+| **q6** |   | **m2**: q3,a3,q4,a6,q5,a7,q6; **m3**: q6 | From **m2**: a8, from **m3**: a9 |   |
+|   | **3** |   | Select **m3** model | Enter into normal conversation\. |
+| **q7** |   | **m3**: q1,a1,q2,a2,q3,a3,q4,a5,a6,q5,a7,q6,a8,a9,q7 | Answer: a10 | Assuming, that not message is ommited, in the normal conversation, alle messages will be sent |
+
+## The other example
+
+There is the group conversation with the same assumptions:
+
+| Action in operation state | Action in configuration state | Request into server | Effect | Remarks |
+| --- | --- | --- | --- | --- |
+|   | **\.123** |   | Select all three models as set of model group | Enter into group conversation\. |
+| **q1** |   | **m1**: q1; **m2**: q1; **m3**: q1 | From m1: a1, from m2: a2, from m3: a3 | Asks the same question into three models\. |
+| **q2** |   | **m1**: q1,a1; **m2**: q1,a2; **m3**: q1,a3 | From m1: a4, from m2: a5, from m3: a6 |   |
+| **q3** |   | **m1**: q1,a1,q2,a4; **m2**: q1,a2,q2,a5; **m3**: q1,a3,q2,a6 | From m1: a7, from m2: a8, from m3: a9 |   |
+
+## Remarks
+
+The general rule is following, assuming no message is ommited:
+
+
+* **Normal conversation** \- All messages contained in the context are sent into server regardless the model used to ask and aquire the message\.
+* **Group conversation** \- To the server, there will be send the only messages, which has the model contained in current group model set\.
+
+Use the normal conversation in following cases:
+
+
+* Talk with single model\.
+* Change model during conversation with context movement\.
+
+Use the group convesation in following cases:
+
+
+* Ask the same question to several models\.
+* Ask additional the same question after aquiring the answers\.
+* Change model during conversation without context movement\.
+
+# Duospace fonts
 
 The current version of **ConChat** supports duospace fonts in answer display and **Markdown** parse\. The actual duospace characters are not arbitrally defined and depends on font used in the text terminal\. You can switch the duospace font support by **MarkdownDuospace** parameter in **config\.txt** or by using **markdownduospace0** or **markdownduospace1** commands\.
 
