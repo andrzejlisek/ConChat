@@ -504,7 +504,10 @@ public class ConChat
         
         ScreenTextDisp_[10].clear(true);
         ScreenTextDisp_[10].supplyLine("# " + workContext + " " + engineName);
-        ScreenTextDisp_[10].supplyLine(CF.ParamGetS("Hint" + workContext));
+        if (!CF.ParamGetS("Hint" + workContext).isBlank())
+        {
+            ScreenTextDisp_[10].supplyLine(CF.ParamGetS("Hint" + workContext));
+        }
         ScreenTextDisp_[10].supplyLine("");
         switch (CF.ParamGetI("HistoryUnit"))
         {
