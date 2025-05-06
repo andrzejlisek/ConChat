@@ -19,6 +19,9 @@ public class ScreenTextDispMessage
     public boolean isAnswer;
     public boolean ommit;
     
+    public int measuredLength0;
+    public int measuredLength1;
+    
 
     public int unitLength(ConfigFile CF_)
     {
@@ -31,6 +34,10 @@ public class ScreenTextDispMessage
         {
             case 0:
                 {
+                    if (measuredLength0 > 0)
+                    {
+                        return measuredLength0;
+                    }
                     int wordCount = 0;
                     boolean wordChar = false;
                     for (int i = 0; i < message.length(); i++)
@@ -51,10 +58,15 @@ public class ScreenTextDispMessage
                             }
                         }
                     }
+                    measuredLength0 = wordCount;
                     return wordCount;
                 }
             case 1:
                 {
+                    if (measuredLength1 > 0)
+                    {
+                        return measuredLength1;
+                    }
                     int charCount = 0;
                     for (int i = 0; i < message.length(); i++)
                     {
@@ -63,6 +75,7 @@ public class ScreenTextDispMessage
                             charCount++;
                         }
                     }
+                    measuredLength1 = charCount;
                     return charCount;
                 }
             case 2:
@@ -80,6 +93,8 @@ public class ScreenTextDispMessage
         tokens = tokens_;
         model = model_;
         ommit = false;
+        measuredLength0 = 0;
+        measuredLength1 = 0;
     }
     
     public String debugText()

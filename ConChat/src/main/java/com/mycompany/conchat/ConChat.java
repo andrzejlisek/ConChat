@@ -479,13 +479,19 @@ public class ConChat
         int contextBeginIdx = ChatEngine.contextBeginIdx(ctxMsg, modelTalkListContextLimitModels, CF, true);
         for (int i = 0; i < ctxMsg.size(); i++)
         {
-            if ((!ctxMsg.get(i).ommit) && (ctxMsg.get(i).unitLength(CF) > 0))
+            if (i >= contextBeginIdx)
             {
-                if (contextBeginIdx <= i)
+                switch (ChatEngine.ctxMatchBulk(ctxMsg, i, modelTalkListContextLimitModels, CF))
                 {
-                    ctxSummaryMsgUsed++;
-                    ctxSummaryWrdUsed += ctxMsg.get(i).unitLength(0);
-                    ctxSummaryChrUsed += ctxMsg.get(i).unitLength(1);
+                    case ommited:
+                    case notMatch:
+                        break;
+                    case partialMatch:
+                    case fullMatch:
+                        ctxSummaryMsgUsed++;
+                        ctxSummaryWrdUsed += ctxMsg.get(i).unitLength(0);
+                        ctxSummaryChrUsed += ctxMsg.get(i).unitLength(1);
+                        break;
                 }
             }
             ctxSummaryMsg++;
@@ -1577,10 +1583,24 @@ public class ConChat
                         ScreenTextDisp_[ctx].displayScrollDn(pageSize);
                         break;
                     case (ConsoleInputOutput.keySpecialNum + 13):
-                        ScreenTextDisp_[ctx].displayScrollUp(-1);
+                        if (ScreenTextDisp_[ctx].displayScrollUp(-1))
+                        {
+                            
+                        }
+                        else
+                        {
+                            work = ScreenTextInput_.keyEvent(key);
+                        }
                         break;
                     case (ConsoleInputOutput.keySpecialNum + 14):
-                        ScreenTextDisp_[ctx].displayScrollDn(-1);
+                        if (ScreenTextDisp_[ctx].displayScrollDn(-1))
+                        {
+                            
+                        }
+                        else
+                        {
+                            work = ScreenTextInput_.keyEvent(key);
+                        }
                         break;
                     case 9:
                         if (workState == 0)

@@ -1248,8 +1248,9 @@ public class ScreenTextDisp
      * Perform the scroll up while displaying
      * @param n 
      */
-    public void displayScrollUp(int n)
+    public boolean displayScrollUp(int n)
     {
+        int displayOffset_ = displayOffset;
         if (n > displayOffset)
         {
             n = displayOffset;
@@ -1257,13 +1258,13 @@ public class ScreenTextDisp
         if (n <= (0 - 9))
         {
             displayOffset = 0;
-            return;
+            return (displayOffset_ != displayOffset);
         }
         if (n < 0)
         {
             displayOffset = 0;
             displayAll();
-            return;
+            return (displayOffset_ != displayOffset);
         }
 
         if (n > 0)
@@ -1272,7 +1273,7 @@ public class ScreenTextDisp
             {
                 displayOffset -= n;
                 displayAll();
-                return;
+                return (displayOffset_ != displayOffset);
             }
         
             ConsoleInputOutput_.setScrollRegion(0, textHeight - 1);
@@ -1293,24 +1294,26 @@ public class ScreenTextDisp
                 display(textHeight - 1, textHeight);
             }
         }
+        return (displayOffset_ != displayOffset);
     }
     
     /**
      * Perform the scroll down while displaying
      * @param n 
      */
-    public void displayScrollDn(int n)
+    public boolean displayScrollDn(int n)
     {
+        int displayOffset_ = displayOffset;
         if (n <= (0 - 9))
         {
             displayOffset = textRaw.size() - 1;
-            return;
+            return (displayOffset_ != displayOffset);
         }
         if (n < 0)
         {
             displayOffset = textRaw.size() - 1;
             displayAll();
-            return;
+            return (displayOffset_ != displayOffset);
         }
 
         if (n > textRaw.size() - 1 - displayOffset)
@@ -1323,7 +1326,7 @@ public class ScreenTextDisp
             {
                 displayOffset += n;
                 displayAll();
-                return;
+                return (displayOffset_ != displayOffset);
             }
 
             ConsoleInputOutput_.setScrollRegion(0, textHeight - 1);
@@ -1352,6 +1355,7 @@ public class ScreenTextDisp
             }
             ConsoleInputOutput_.setScrollRegion(-1, -1);
         }
+        return (displayOffset_ != displayOffset);
     }
 
     /**
@@ -1479,18 +1483,23 @@ public class ScreenTextDisp
                     ommit = textMsg.get(item.MessageIdx).ommit;
                     if (!ommit)
                     {
-                        switch (ChatEngine.ctxMatchBulk(textMsg.get(item.MessageIdx), ConChat.modelTalkListContextLimitModels))
+                        if (item.MessageIdx >= contextBeginIdx)
                         {
-                            case 0: // No match
-                                ommitZeroI = (item.lineFormat == 0) ? 2 : 1;
-                                break;
-                            case 1: // Partial match
-                            case 2: // Full match
-                                if (item.MessageIdx < contextBeginIdx)
-                                {
+                            switch (ChatEngine.ctxMatchBulk(textMsg, item.MessageIdx, ConChat.modelTalkListContextLimitModels, CF))
+                            {
+                                case ommited:
+                                case partialMatch:
+                                case fullMatch:
+                                    ommitZeroI = 0;
+                                    break;
+                                case notMatch:
                                     ommitZeroI = (item.lineFormat == 0) ? 2 : 1;
-                                }
-                                break;
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            ommitZeroI = (item.lineFormat == 0) ? 2 : 1;
                         }
                     }
                 }
@@ -2260,7 +2269,13 @@ public class ScreenTextDisp
         for (int i = 0; i < str.length(); i++)
         {
             char chr = str.charAt(i);
-            if (CommonTools.isChar(chr, false, false, false, true)) sb.append("\\");
+            if (CommonTools.isChar(chr, false, false, false, true))
+            {
+                if ((chr != '[') && (chr != ']'))
+                {
+                    sb.append("\\");
+                }
+            }
             sb.append(chr);
         }
         return sb.toString();

@@ -98,6 +98,7 @@ public class ChatEngine
 
     private static ArrayList<String> contextBeginIdxModelList;
     private static String contextBeginIdxModelListStr = "~~null~~";
+
     
     /**
      * Fint the first message to send as context message list within token number limit
@@ -126,7 +127,7 @@ public class ChatEngine
             }
         }
         contextBeginIdxModelListStr = ctxModel;
-        int idx_ = partial ? (contextBeginIdxModelList.size()) : 0;
+        int idx_ = partial ? ctx.size() : 0;
         for (int I = 0; I < contextBeginIdxModelList.size(); I++)
         {
             int idx = 0;
@@ -349,8 +350,15 @@ public class ChatEngine
         return engineList;
     }
 
-    public static int ctxMatchBulk(ScreenTextDispMessage ctxItem, String ctxModel)
+    public enum ctxMatchResult { fullMatch, partialMatch, notMatch, ommited };
+    
+    public static ctxMatchResult ctxMatchBulk(ArrayList<ScreenTextDispMessage> ctx, int ctxIdx, String ctxModel, ConfigFile CF_)
     {
+        ScreenTextDispMessage ctxItem = ctx.get(ctxIdx);
+        if (ctxItem.ommit)
+        {
+            return ctxMatchResult.ommited;
+        }
         if (ctxModel.contains(CommonTools.splitterInfoS))
         {
             String[] ctxModel_ = ctxModel.split(CommonTools.splitterInfoS);
@@ -358,7 +366,7 @@ public class ChatEngine
             int match1 = 0;
             for (int i = 0; i < ctxModel_.length; i++)
             {
-                if (ctxMatch(ctxItem, ctxModel_[i]))
+                if (ctxMatch(ctxItem, ctxModel_[i]) && (contextBeginIdx(ctx, ctxModel_[i], CF_, false) <= ctxIdx))
                 {
                     match1++;
                 }
@@ -367,19 +375,19 @@ public class ChatEngine
                     match0++;
                 }
             }
-            if ((match1 > 0) && (match0 == 0)) return 2;
-            if ((match1 == 0) && (match0 > 0)) return 0;
-            return 1;
+            if ((match1 > 0) && (match0 == 0)) return ctxMatchResult.fullMatch;
+            if ((match1 == 0) && (match0 > 0)) return ctxMatchResult.notMatch;
+            return ctxMatchResult.partialMatch;
         }
         else
         {
-            if (ctxMatch(ctxItem, ctxModel))
+            if (ctxMatch(ctxItem, ctxModel) && (contextBeginIdx(ctx, ctxModel, CF_, false) <= ctxIdx))
             {
-                return 2;
+                return ctxMatchResult.fullMatch;
             }
             else
             {
-                return 0;
+                return ctxMatchResult.notMatch;
             }
         }
     }

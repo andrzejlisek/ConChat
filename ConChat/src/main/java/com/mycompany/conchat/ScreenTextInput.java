@@ -152,6 +152,26 @@ public class ScreenTextInput
                     ConsoleInputOutput_.ringBell();
                 }
                 break;
+            case ConsoleInputOutput.keySpecialNum + 13:
+                if (textPos > 0)
+                {
+                    textPos = 0;
+                }
+                else
+                {
+                    ConsoleInputOutput_.ringBell();
+                }
+                break;
+            case ConsoleInputOutput.keySpecialNum + 14:
+                if (textPos < textValue.length())
+                {
+                    textPos = textValue.length();
+                }
+                else
+                {
+                    ConsoleInputOutput_.ringBell();
+                }
+                break;
             case 13:
             case 10:
                 return false;
