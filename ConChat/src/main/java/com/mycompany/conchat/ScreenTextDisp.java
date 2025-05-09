@@ -80,13 +80,13 @@ public class ScreenTextDisp
         int id = textRaw.get(idx1).blockId;
         while ((idx >= 0) && (id == textRaw.get(idx1).blockId))
         {
-            if (!textRaw.get(idx1).textLine.startsWith("|"))
+            if (!textRaw.get(idx1).textLine.startsWith('|'))
             {
-                textRaw.get(idx1).textLine = "|" + textRaw.get(idx1).textLine;
+                textRaw.get(idx1).textLine.prepend('|');
             }
-            if (!textRaw.get(idx1).textLine.endsWith("|"))
+            if (!textRaw.get(idx1).textLine.endsWith('|'))
             {
-                textRaw.get(idx1).textLine = textRaw.get(idx1).textLine + "|";
+                textRaw.get(idx1).textLine.append('|');
             }
             idx1--;
         }
@@ -102,14 +102,14 @@ public class ScreenTextDisp
             for (int i = idx1; i <= idx2; i++)
             {
                 int columnCount = 0;
-                int lastPos = textRaw.get(i).textLine.indexOf("|");
+                int lastPos = textRaw.get(i).textLine.indexOf('|', 0);
                 if (lastPos >= 0)
                 {
                     tableOffset = Math.max(tableOffset, lastPos);
                     while (lastPos >= 0)
                     {
                         columnCount++;
-                        lastPos = textRaw.get(i).textLine.indexOf("|", lastPos + 1);
+                        lastPos = textRaw.get(i).textLine.indexOf('|', lastPos + 1);
                     }
                     tableColumns = Math.max(tableColumns, columnCount);
                 }
@@ -128,11 +128,11 @@ public class ScreenTextDisp
             {
                 cellSeparator.clear();
                 cellContent.clear();
-                int lastPos = textRaw.get(i).textLine.indexOf("|");
+                int lastPos = textRaw.get(i).textLine.indexOf('|', 0);
                 while (lastPos >= 0)
                 {
                     cellSeparator.add(lastPos);
-                    lastPos = textRaw.get(i).textLine.indexOf("|", lastPos + 1);
+                    lastPos = textRaw.get(i).textLine.indexOf('|', lastPos + 1);
                 }
                 for (int ii = 1; ii < cellSeparator.size(); ii++)
                 {
@@ -140,7 +140,6 @@ public class ScreenTextDisp
                     ScreenTextDispRawItem cellItem_ = new ScreenTextDispRawItem(textRaw.get(i), true);
                     cellItem_.remove(cellSeparator.get(ii), -1);
                     cellItem_.remove(0, cellSeparator.get(ii - 1) + 1);
-
                     cellItem.textRaw.add(cellItem_);
                     cellItem.supplyFinish();
                     cellContent.add(cellItem);
@@ -192,23 +191,35 @@ public class ScreenTextDisp
             ScreenTextDispRawItem tableHeader = new ScreenTextDispRawItem(textRaw.get(idx1), false);
             ScreenTextDispRawItem tableFooter = new ScreenTextDispRawItem(textRaw.get(idx2), false);
 
-            tableHeader.textLine = "" + CommonTools.table1;
-            String tableMiddle_textLine = "" + CommonTools.tableL;
-            tableFooter.textLine = "" + CommonTools.table3;
+            tableHeader.textLine.clear().append(CommonTools.table1);
+            StringUTF tableMiddle_textLine = (new StringUTF()).append(CommonTools.tableL);
+            tableFooter.textLine.clear().append(CommonTools.table3);
 
             int[] charPos = new int[idx2 - idx1 + 1];
-            int lastPos = 0;
+            int[] charLastPos = new int[idx2 - idx1 + 1];
+            int[] columnSize = new int[idx2 - idx1 + 1];
             while (true)
             {
+                int columnSizeMax = 0;
                 int posMin = 0;
                 int posMax = -1;
                 for (int i = idx1; i <= idx2; i++)
                 {
                     textRawItemMeasureChars(i, true);
-                    charPos[i - idx1] = textRaw.get(i).textLineIndexOfCell('|', lastPos);
+                    charPos[i - idx1] = textRaw.get(i).textLine.indexOf('|', charLastPos[i - idx1]);
                     posMin = Math.min(posMin, charPos[i - idx1]);
                     posMax = Math.max(posMax, charPos[i - idx1]);
+
+                    columnSize[i - idx1] = 0;
+                    for (int ii = charLastPos[i - idx1]; ii < charPos[i - idx1]; ii++)
+                    {
+                        columnSize[i - idx1] += textRaw.get(i).textLineCharSize[ii];
+                    }
+                    columnSizeMax = Math.max(columnSizeMax, columnSize[i - idx1]);
+                    
+                    CommonTools.debugln(">>>" + i + " = {" + textRaw.get(i).textLine.get() + "} " + charLastPos[i - idx1] + "_" + charPos[i - idx1] + "  --> " + columnSize[i - idx1]);
                 }
+                CommonTools.debugln("");
                 if (posMin < 0)
                 {
                     if (posMax < 0)
@@ -225,26 +236,30 @@ public class ScreenTextDisp
                 }
                 else
                 {
-                    for (int i = idx1; i <= idx2; i++)
+                    if (charLastPos[0] > 0)
                     {
-                        if (charPos[i - idx1] < posMax) textRaw.get(i).insert(charPos[i - idx1], CommonTools.stringIndent(posMax - charPos[i - idx1], ' '), true);
-                    }
-                    if (lastPos > 0)
-                    {
-                        tableHeader.textLine += CommonTools.stringIndent(posMax - lastPos, CommonTools.tableH);
-                        tableHeader.textLine += CommonTools.tableT;
-                        tableMiddle_textLine += CommonTools.stringIndent(posMax - lastPos, CommonTools.tableH);
-                        tableMiddle_textLine += CommonTools.tableC;
-                        tableFooter.textLine += CommonTools.stringIndent(posMax - lastPos, CommonTools.tableH);
-                        tableFooter.textLine += CommonTools.tableB;
+                        tableHeader.textLine.append(CommonTools.tableH, columnSizeMax).append(CommonTools.tableT);
+                        tableMiddle_textLine.append(CommonTools.tableH, columnSizeMax).append(CommonTools.tableC);
+                        tableFooter.textLine.append(CommonTools.tableH, columnSizeMax).append(CommonTools.tableB);
                     }
                     else
                     {
-                        tableHeader.textLine += CommonTools.stringIndent(posMax - lastPos, ' ');
-                        tableMiddle_textLine += CommonTools.stringIndent(posMax - lastPos, ' ');
-                        tableFooter.textLine += CommonTools.stringIndent(posMax - lastPos, ' ');
+                        tableHeader.textLine.append(' ', columnSizeMax);
+                        tableMiddle_textLine.append(' ', columnSizeMax);
+                        tableFooter.textLine.append(' ', columnSizeMax);
                     }
-                    lastPos = posMax + 1;
+
+                    int padSize = 0;
+                    for (int i = idx1; i <= idx2; i++)
+                    {
+                        charLastPos[i - idx1] = charPos[i - idx1] + 1;
+                        if (columnSize[i - idx1] < columnSizeMax)
+                        {
+                            padSize = columnSizeMax - columnSize[i - idx1];
+                            textRaw.get(i).insert(charPos[i - idx1], StringUTF.indent(padSize, ' '), true);
+                            charLastPos[i - idx1] += padSize;
+                        }
+                    }
                 }
             }
 
@@ -254,20 +269,26 @@ public class ScreenTextDisp
                 int chrIdx = textRaw.get(i).textLine.indexOf('|', 0);
                 while (chrIdx >= 0)
                 {
-                    textRaw.get(i).textLine = CommonTools.stringSetChar(textRaw.get(i).textLine, chrIdx, CommonTools.tableV);
+                    textRaw.get(i).textLine.setChar(chrIdx, CommonTools.tableV);
                     chrIdx = textRaw.get(i).textLine.indexOf('|', chrIdx + 1);
                 }
             }
-            tableHeader.textLine = tableHeader.textLine.substring(0, lastPos - 1) + CommonTools.table2;
-            tableMiddle_textLine = tableMiddle_textLine.substring(0, lastPos - 1) + CommonTools.tableR;
-            tableFooter.textLine = tableFooter.textLine.substring(0, lastPos - 1) + CommonTools.table4;
-            textRaw.get(idx1 + cellHeaderSize).textLine = tableMiddle_textLine;
-            textRaw.get(idx1 + 1).cmdIdx.clear();
-            textRaw.get(idx1 + 1).cmdTxt.clear();
 
-            textRaw.add(idx2 + 1, tableFooter);
-            textRaw.add(idx1, tableHeader);
-            idx += 2;
+
+            if (true)
+            {
+                tableHeader.textLine.setChar(charLastPos[0] - 1, CommonTools.table2);
+                tableMiddle_textLine.setChar(charLastPos[0] - 1, CommonTools.tableR);
+                tableFooter.textLine.setChar(charLastPos[0] - 1, CommonTools.table4);
+
+                textRaw.get(idx1 + cellHeaderSize).textLine = tableMiddle_textLine;
+                textRaw.get(idx1 + 1).cmdIdx.clear();
+                textRaw.get(idx1 + 1).cmdTxt.clear();
+
+                textRaw.add(idx2 + 1, tableFooter);
+                textRaw.add(idx1, tableHeader);
+                idx += 2;
+            }
         }
         return idx;
     }
@@ -301,10 +322,10 @@ public class ScreenTextDisp
                     if (noSpaceIdx < (item.textLine.length() - 1))
                     {
                         // Punctation list item
-                        int nextSpace = item.textLine.indexOf(" ", noSpaceIdx);
+                        int nextSpace = item.textLine.indexOf(' ', noSpaceIdx);
                         if (nextSpace > 0)
                         {
-                            char itemChr = item.textLine.charAt(nextSpace - 1);
+                            int itemChr = item.textLine.charAt(nextSpace - 1);
                             if (nextSpace - noSpaceIdx == 1)
                             {
                                 switch (itemChr)
@@ -328,7 +349,7 @@ public class ScreenTextDisp
                                 boolean onlyDigits = true;
                                 for (int ii = noSpaceIdx; ii < (nextSpace - 1); ii++)
                                 {
-                                    char digitChr = item.textLine.charAt(ii);
+                                    int digitChr = item.textLine.charAt(ii);
                                     if ((digitChr < 48) || (digitChr > 57))
                                     {
                                         onlyDigits = false;
@@ -357,7 +378,9 @@ public class ScreenTextDisp
                 }
 
 
-                String windowingText = "     " + item.textLine.substring(textLineBegin) + "     ";
+                StringUTF windowingText = new StringUTF(item.textLine.clone().substring(textLineBegin));
+                windowingText.prepend(' ').prepend(' ').prepend(' ').prepend(' ').prepend(' ');
+                windowingText.append(' ').append(' ').append(' ').append(' ').append(' ');
                 int removedChars = 0;
                 if (MarkdownQuoteBlock || MarkdownEquationBlock)
                 {
@@ -629,13 +652,13 @@ public class ScreenTextDisp
                                     // Modify windowing string to avoid recursively remove
                                     if (escapedChar == '\\')
                                     {
-                                        windowingText = CommonTools.stringSetChar(windowingText, i + 4, 'X');
+                                        windowingText.setChar(i + 4, 'X');
                                     }
                                 }
                                 else
                                 {
-                                    windowingText = CommonTools.stringSetChar(windowingText, i + 3, '$');
-                                    windowingText = CommonTools.stringSetChar(windowingText, i + 4, '$');
+                                    windowingText.setChar(i + 3, '$');
+                                    windowingText.setChar(i + 4, '$');
                                 }
                             }
                         }
@@ -669,7 +692,7 @@ public class ScreenTextDisp
                     item.blockId = blockIdCounter;
 
                     // Technical data hidden as horizontal line
-                    if (windowingText.trim().startsWith("___") && windowingText.trim().endsWith("___"))
+                    if (windowingText.clone().trim().startsWith("___") && windowingText.clone().trim().endsWith("___"))
                     {
                         if (windowingText.contains("<<<") || windowingText.contains(">>>"))
                         {
@@ -711,14 +734,14 @@ public class ScreenTextDisp
                         }
                         if (item.indent > 0)
                         {
-                            item.insert(0, CommonTools.stringIndent(item.indent, ' '), false);
+                            item.insert(0, StringUTF.indent(item.indent, ' '), false);
                             //item.textLine = stringIndent(item.indent) + item.textLine;
                         }
 
                         //item.textLine = "|" + item.indent + "|" + item.indentNext + "|" + MarkdownAfterListItem + "|" + item.textLine;
                     }
 
-                    windowingText = windowingText.trim();
+                    windowingText.trim();
 
                     // header
                     int headerType = 0;
@@ -748,9 +771,9 @@ public class ScreenTextDisp
                     }
                     if (headerType > 0)
                     {
-                        int idx0 = item.textLine.indexOf("# ") - headerType + 1;
+                        int idx0 = item.textLine.indexOf("# ", 0) - headerType + 1;
                         item.remove(idx0, headerType + 1);
-                        if (item.textLine.trim().endsWith("#") && (item.textLine.trim().contains(" ")))
+                        if (item.textLine.clone().trim().endsWith('#') && ((item.textLine.clone().trim().indexOf(" ", 0) >= 0)))
                         {
                             int idxHash = item.textLine.length() - 1;
                             while (item.textLine.charAt(idxHash) != '#')
@@ -783,7 +806,7 @@ public class ScreenTextDisp
                     }
 
                     // Horizontal line
-                    if ((windowingText.equals("___")) || (windowingText.equals("***")) || (windowingText.equals("---")))
+                    if ((windowingText.equalsStr("___")) || (windowingText.equalsStr("***")) || (windowingText.equalsStr("---")))
                     {
                         item.textType = ScreenTextDispRawItem.textTypeDef.line;
                     }
@@ -828,9 +851,8 @@ public class ScreenTextDisp
                         }
                         if (isTableCandidate && (idx > 0))
                         {
-                            if (textRaw.get(idx - 1).textLine.trim().contains("|"))
+                            if (textRaw.get(idx - 1).textLine.clone().trim().indexOf('|', 0) >= 0)
                             {
-
                                 String tableLine1 = textRawItemUnWrap(idx - 1, true).trim();
                                 String tableLine2 = textRawItemUnWrap(idx, true).trim();
 
@@ -838,7 +860,7 @@ public class ScreenTextDisp
                                 {
                                     if (tableLine2.contains("|"))
                                     {
-                                        int idxRem = textRaw.get(idx).textLine.indexOf("-");
+                                        int idxRem = textRaw.get(idx).textLine.indexOf('-', 0);
                                         while (idxRem > 0)
                                         {
                                             int idxRemLen = 0;
@@ -847,7 +869,19 @@ public class ScreenTextDisp
                                                 idxRemLen++;
                                             }
                                             textRaw.get(idx).remove(idxRem, idxRemLen);
-                                            idxRem = textRaw.get(idx).textLine.indexOf("-");
+                                            idxRem = textRaw.get(idx).textLine.indexOf('-', 0);
+                                        }
+
+                                        idxRem = textRaw.get(idx).textLine.indexOf(':', 0);
+                                        while (idxRem > 0)
+                                        {
+                                            int idxRemLen = 0;
+                                            while (textRaw.get(idx).textLine.charAt(idxRem + idxRemLen) == ':')
+                                            {
+                                                idxRemLen++;
+                                            }
+                                            textRaw.get(idx).remove(idxRem, idxRemLen);
+                                            idxRem = textRaw.get(idx).textLine.indexOf(':', 0);
                                         }
 
                                         textRawItemUnWrap(idx - 1, false);
@@ -949,7 +983,7 @@ public class ScreenTextDisp
         }
         catch (Exception e)
         {
-            item.textLine = "Parse error: " + CommonTools.exceptionToStr(e);
+            item.textLine = new StringUTF("Parse error: " + CommonTools.exceptionToStr(e));
             blockIdCounter++;
             item.blockId = blockIdCounter;
             item.textType = ScreenTextDispRawItem.textTypeDef.code;
@@ -978,10 +1012,10 @@ public class ScreenTextDisp
             StringBuilder sb = new StringBuilder();
             for (int i = idx1; i < idx2; i++)
             {
-                sb.append(textRaw.get(i).textLine);
-                sb.append(textRaw.get(i).textLineWrap);
+                sb.append(textRaw.get(i).textLine.get());
+                sb.append(textRaw.get(i).textLineWrap.get());
             }
-            sb.append(textRaw.get(idx2).textLine);
+            sb.append(textRaw.get(idx2).textLine.get());
 
             return sb.toString();
         }
@@ -993,7 +1027,7 @@ public class ScreenTextDisp
                 textRaw.remove(idx1 + 1);
                 idx2--;
             }
-            return textRaw.get(idx1).textLine;
+            return textRaw.get(idx1).textLine.get();
         }
     }
     
@@ -1010,21 +1044,10 @@ public class ScreenTextDisp
         textRaw.get(idx).textLineCharSize = new int[textRaw.get(idx).textLine.length()];
         textRaw.get(idx).textLineLength = textRaw.get(idx).textLine.length();
         textRaw.get(idx).textLineCells = 0;
-        if (ConsoleInputOutput_ != null)
+        for (int i = 0; i < textRaw.get(idx).textLine.length(); i++)
         {
-            for (int i = 0; i < textRaw.get(idx).textLine.length(); i++)
-            {
-                textRaw.get(idx).textLineCharSize[i] = ConsoleInputOutput_.charSize(textRaw.get(idx).textLine.charAt(i));
-                textRaw.get(idx).textLineCells += textRaw.get(idx).textLineCharSize[i];
-            }
-        }
-        else
-        {
-            for (int i = 0; i < textRaw.get(idx).textLine.length(); i++)
-            {
-                textRaw.get(idx).textLineCharSize[i] = 1;
-                textRaw.get(idx).textLineCells++;
-            }
+            textRaw.get(idx).textLineCharSize[i] = CommonTools.charSize(ConsoleInputOutput_, textRaw.get(idx).textLine.charAt(i));
+            textRaw.get(idx).textLineCells += textRaw.get(idx).textLineCharSize[i];
         }
     }
     
@@ -1070,7 +1093,7 @@ public class ScreenTextDisp
                         textRaw.get(idx).append(' ');
                     }
 
-                    int lastSpace = textRaw.get(idx - 1).textLine.substring(0, i).lastIndexOf(' ');
+                    int lastSpace = textRaw.get(idx - 1).textLine.clone().substring(0, i).indexOf(' ', 1 - i);
                     if (lastSpace >= textRaw.get(idx).indent)
                     {
                         int lastSpace0 = lastSpace;
@@ -1085,8 +1108,8 @@ public class ScreenTextDisp
                         i += textRaw.get(idx).indent;
                         if (lastSpace0 < lastSpace)
                         {
-                            textRaw.get(idx - 1).textLineWrap = textRaw.get(idx - 1).textLine.substring(lastSpace0);
-                            textRaw.get(idx - 1).textLine = textRaw.get(idx - 1).textLine.substring(0, lastSpace0);
+                            textRaw.get(idx - 1).textLineWrap = textRaw.get(idx - 1).textLine.clone().substring(lastSpace0);
+                            textRaw.get(idx - 1).textLine.substring(0, lastSpace0);
                         }
                     }
                     else
@@ -1106,13 +1129,13 @@ public class ScreenTextDisp
                 }
                 if (spaceIdx >= 0)
                 {
-                    textRaw.get(idx).textLineWrap = textRaw.get(idx).textLine.substring(spaceIdx + 1);
-                    textRaw.get(idx).textLine = textRaw.get(idx).textLine.substring(0, spaceIdx + 1);
+                    textRaw.get(idx).textLineWrap = textRaw.get(idx).textLine.clone().substring(spaceIdx + 1);
+                    textRaw.get(idx).textLine.substring(0, spaceIdx + 1);
                 }
                 else
                 {
                     textRaw.get(idx).textLineWrap = textRaw.get(idx).textLine;
-                    textRaw.get(idx).textLine = "";
+                    textRaw.get(idx).textLine.clear();
                 }
             }
             if (textRaw.get(idx).lineFormat == 2)
@@ -1143,7 +1166,7 @@ public class ScreenTextDisp
      * Get the text of message in the middle of screen
      * @return 
      */
-    public String getLastQuestion(boolean idx)
+    public StringUTF getLastQuestion(boolean idx)
     {
         int t = textRaw.get(displayOffset).MessageIdx;
         if ((t < 1) && (displayOffset > 0))
@@ -1158,11 +1181,11 @@ public class ScreenTextDisp
             }
             if (textMsg.get(t).isAnswer || textMsg.get(t).ommit)
             {
-                return idx ? "-1" : "";
+                return new StringUTF(idx ? "-1" : "");
             }
-            return idx ? ("" + t + "") : textMsg.get(t).message;
+            return new StringUTF(idx ? ("" + t + "") : textMsg.get(t).message.get());
         }
-        return idx ? "-1" : "";
+        return new StringUTF(idx ? "-1" : "");
     }
     
     /**
@@ -1516,16 +1539,16 @@ public class ScreenTextDisp
                 }
                 if ((item.textType == ScreenTextDispRawItem.textTypeDef.line) || (item.textType == ScreenTextDispRawItem.textTypeDef.message))
                 {
-                    String msgInfo = "";
+                    StringUTF msgInfo = new StringUTF();
                     if (item.textType == ScreenTextDispRawItem.textTypeDef.message)
                     {
                         if (parseMarkdown)
                         {
-                            msgInfo = ConChat.modelInfoFromMessage(item.textLine, item.alignRight ? 1 : 0);
+                            msgInfo = ConChat.modelInfoFromMessage(item.textLine.get(), item.alignRight ? 1 : 0);
                         }
                         else
                         {
-                            msgInfo = item.textLine;
+                            msgInfo = item.textLine.clone();
                         }
                     }
                     for (int ii = 0; ii < textWidth_; ii++)
@@ -1547,7 +1570,7 @@ public class ScreenTextDisp
                         }
                         else
                         {
-                            char infoChr = CommonTools.splitterMsg;
+                            int infoChr = CommonTools.splitterMsg;
                             int infoMargin = 2;
                             if (textWidth_ < 50) infoMargin = 1;
                             if (textWidth_ < 30) infoMargin = 0;
@@ -1774,7 +1797,7 @@ public class ScreenTextDisp
                                 }
                             }
 
-                            char textChar = ((textLinePointer >= 0) && (textLinePointer < item.textLineLength)) ? item.textLine.charAt(textLinePointer) : ' ';
+                            int textChar = ((textLinePointer >= 0) && (textLinePointer < item.textLineLength)) ? item.textLine.charAt(textLinePointer) : ' ';
                             int useAttributesPtr = textLinePointer;
 
                             if (writeLeftScroll2)
@@ -1817,7 +1840,6 @@ public class ScreenTextDisp
                                 }
                             }
                             
-                            
                             ConsoleInputOutput_.printChar(textChar);
                         }
 
@@ -1852,14 +1874,16 @@ public class ScreenTextDisp
                 if (debugLineInfo)
                 {
                     ConsoleInputOutput_.setCursorPos(3, i);
-                    ConsoleInputOutput_.printString("[" + item.lineNumber + "][" + item.MessageIdx + "][" + itemOffset + "]");
+                    ConsoleInputOutput_.printString("[" + item.lineNumber + "]");
+                    ConsoleInputOutput_.printString("[" + item.MessageIdx + "]");
+                    ConsoleInputOutput_.printString("[" + itemOffset + "]");
                     if (item.alignRight)
                     {
-                        ConsoleInputOutput_.printString(">");
+                        ConsoleInputOutput_.printChar('>');
                     }
                     else
                     {
-                        ConsoleInputOutput_.printString("<");
+                        ConsoleInputOutput_.printChar('<');
                     }
                 }
                 displayBackground.set(i, 0);
@@ -1883,7 +1907,7 @@ public class ScreenTextDisp
     {
         messageIdxCounter = -1;
         boolean lastMsgOmmit = false;
-        ArrayList<String> msgBuf = new ArrayList<>();
+        ArrayList<StringUTF> msgBuf = new ArrayList<>();
         int msgTokens = -1;
         String msgTokensModel = "";
         boolean msgAnswer = false;
@@ -1925,8 +1949,8 @@ public class ScreenTextDisp
                         }
 
                         msgBuf.clear();
-                        msgTokens = CommonTools.strToInt(ConChat.modelInfoFromMessage(S.substring(3, S.length() - 3), 8), -1);
-                        msgTokensModel = ConChat.modelInfoFromMessage(S.substring(3, S.length() - 3), 0);
+                        msgTokens = CommonTools.strToInt(ConChat.modelInfoFromMessage(S.substring(3, S.length() - 3), 8).get(), -1);
+                        msgTokensModel = ConChat.modelInfoFromMessage(S.substring(3, S.length() - 3), 0).get();
 
                         if (S.startsWith("___<<<") && S.endsWith("<<<___")) { msgAnswer = false; }
                         if (S.startsWith("___>>>") && S.endsWith(">>>___")) { msgAnswer = true; }
@@ -1938,11 +1962,11 @@ public class ScreenTextDisp
                     {
                         messageIdxCounter = textMsg.size();
                     }
-                    msgBuf.add(S);
+                    msgBuf.add(new StringUTF(S));
                 }
             }
 
-            supplyLine(S);
+            supplyLine(new StringUTF(S));
 
         }
         {
@@ -2043,11 +2067,11 @@ public class ScreenTextDisp
         supplyPointTemp = false;
     }
 
-    public void supply(String raw)
+    public void supply(StringUTF raw)
     {
         if ((fileName.length() > 0) && (!supplyPointTemp))
         {
-            CommonTools.fileSaveText(fileName, raw);
+            CommonTools.fileSaveText(fileName, raw.get());
         }
         
         int t = textRaw.size() - 1;
@@ -2077,16 +2101,27 @@ public class ScreenTextDisp
             }
             if ((chrN >= 32) && (chrN != 127))
             {
-                textRaw.get(t).append((char)chrN);
+                textRaw.get(t).append(chrN);
             }
         }
     }
 
 
+    public void supplyLine(StringUTF raw)
+    {
+        raw.append('\n');
+        supply(raw);
+        raw.remove(raw.length() - 1, 1);
+    }
+
+    public void supply(String raw)
+    {
+        supply(new StringUTF(raw));
+    }
+
     public void supplyLine(String raw)
     {
-        supply(raw);
-        supply("\n");
+        supplyLine(new StringUTF(raw));
     }
     
     /**
@@ -2104,7 +2139,7 @@ public class ScreenTextDisp
             {
                 if ((n < 0) && (textRaw.get(displayOffset).blockOffset == 0))
                 {
-                    return true;
+                    return false;
                 }
                 
                 int maxOffset = textRaw.get(displayOffset).textLineCells;
@@ -2128,7 +2163,7 @@ public class ScreenTextDisp
 
                 if ((n > 0) && (textRaw.get(displayOffset).blockOffset >= maxOffset))
                 {
-                    return true;
+                    return false;
                 }
                 
                 for (int i = idx1; i <= idx2; i++)
@@ -2204,9 +2239,9 @@ public class ScreenTextDisp
     }
 
     
-    public static String convSingleToMulti(String str)
+    public static StringUTF convSingleToMulti(StringUTF str)
     {
-        StringBuilder str_ = new StringBuilder();
+        StringUTF str_ = new StringUTF();
         for (int i = 0; i < str.length(); i++)
         {
             if ((str.charAt(i) == '\\') && (i < (str.length() - 1)))
@@ -2234,16 +2269,15 @@ public class ScreenTextDisp
                 str_.append(str.charAt(i));
             }
         }
-        str = str_.toString();
-        return str;
+        return str_;
     }
 
-    public static String convMultiToSingle(String str)
+    public static StringUTF convMultiToSingle(StringUTF str)
     {
-        StringBuilder str_ = new StringBuilder();
+        StringUTF str_ = new StringUTF();
         for (int i = 0; i < str.length(); i++)
         {
-            char chr = str.charAt(i);
+            int chr = str.charAt(i);
             switch (chr)
             {
                 case '\n':
@@ -2260,15 +2294,15 @@ public class ScreenTextDisp
                     break;
             }
         }
-        return str_.toString();
+        return str_;
     }
     
-    public static String convPlainToMarkdown(String str)
+    public static StringUTF convPlainToMarkdown(StringUTF str)
     {
-        StringBuilder sb = new StringBuilder();
+        StringUTF sb = new StringUTF();
         for (int i = 0; i < str.length(); i++)
         {
-            char chr = str.charAt(i);
+            int chr = str.charAt(i);
             if (CommonTools.isChar(chr, false, false, false, true))
             {
                 if ((chr != '[') && (chr != ']'))
@@ -2278,12 +2312,12 @@ public class ScreenTextDisp
             }
             sb.append(chr);
         }
-        return sb.toString();
+        return sb;
     }
     
     private static ScreenTextDisp convMarkdownToPlain_ = null;
     
-    public static String convMarkdownToPlain(String str)
+    public static StringUTF convMarkdownToPlain(StringUTF str)
     {
         if (convMarkdownToPlain_ == null)
         {
@@ -2294,13 +2328,13 @@ public class ScreenTextDisp
         convMarkdownToPlain_.textMessageWidth = str.length() + 10;
         convMarkdownToPlain_.clear(false);
         convMarkdownToPlain_.supplyLine(str);
-        StringBuilder sb = new StringBuilder();
+        StringUTF sb = new StringUTF();
         for (int i = 0; i < (convMarkdownToPlain_.textRaw.size() - 1); i++)
         {
             if (i > 0) sb.append("\n");
-            sb.append(convMarkdownToPlain_.textRaw.get(i).textLine);
+            sb.append(convMarkdownToPlain_.textRaw.get(i).textLine.get());
         }
-        return sb.toString();
+        return sb;
     }
     
     /**

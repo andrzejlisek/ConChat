@@ -36,9 +36,34 @@ public class ConsoleInputOutput
     }
     
 
-    public void printChar(char chr)
+    public void printChar(int chr)
     {
-        terminal.writer().write(chr);
+        if (chr >= 0x10000)
+        {
+            terminal.writer().write(((chr - 0x10000) >> 10) + 0xD800);
+            terminal.writer().write(((chr - 0x10000) & 0x3FF) + 0xDC00);
+        }
+        else
+        {
+            // High surrogate
+            if ((chr >= 0xD800) && (chr < 0xDBFF))
+            {
+                return;
+            }
+
+            // Low surrogate
+            if ((chr >= 0xDC00) && (chr < 0xDFFF))
+            {
+                return;
+            }
+
+            terminal.writer().write(chr);
+        }
+    }
+
+    public void printString(StringUTF str)
+    {
+        printString(str.get());
     }
 
     public void printString(String str)
@@ -55,7 +80,7 @@ public class ConsoleInputOutput
         terminal.writer().flush();
     }
 
-    public void printEscString(String str)
+    private void printEscString(String str)
     {
         printChar((char)0x1B);
         printString(str);
@@ -255,7 +280,7 @@ public class ConsoleInputOutput
     /**
      * Detect cursor position and save them into terminalReport array
      */
-    void getCursorPos()
+    private void getCursorPos()
     {
         printEscString("[6n");
         getKey();
@@ -264,7 +289,7 @@ public class ConsoleInputOutput
     /**
      * Measure screen size and save them into screenWidth and screenHeight fields
      */
-    void getScreenSize()
+    public void getScreenSize()
     {
         setScrollRegion(-1, -1);
         setCursorPos(0, 2);
@@ -287,13 +312,13 @@ public class ConsoleInputOutput
         setScrollRegion(-1, -1);
     }
     
-    void ringBell()
+    public void ringBell()
     {
         printChar((char)7);
         printFlush();
     }
     
-    void setCursorPos(int x, int y)
+    public void setCursorPos(int x, int y)
     {
         printEscString("[" + (y + 1) + ";" + (x + 1) + "H");
     }
@@ -301,70 +326,70 @@ public class ConsoleInputOutput
     /**
      * Reset all text attributes
      */
-    void setTextAttrReset()
+    public void setTextAttrReset()
     {
         printEscString("[0m");
     }
 
-    void screenClear()
+    public void screenClear()
     {
         setCursorPos(0, 0);
         setTextAttrReset();
         printEscString("[2J");
     }
 
-    void screenLineClear()
+    public void screenLineClear()
     {
         setTextAttrReset();
         printEscString("[0K");
     }
     
-    void setTextAttrBold1()
+    public void setTextAttrBold1()
     {
         printEscString("[1m");
     }
 
-    void setTextAttrBold0()
+    public void setTextAttrBold0()
     {
         printEscString("[22m");
     }
     
-    void setTextAttrItalic1()
+    public void setTextAttrItalic1()
     {
         printEscString("[3m");
     }
 
-    void setTextAttrItalic0()
+    public void setTextAttrItalic0()
     {
         printEscString("[23m");
     }
 
-    void setTextAttrUnderline1()
+    public void setTextAttrUnderline1()
     {
         printEscString("[4m");
     }
 
-    void setTextAttrUnderline0()
+    public void setTextAttrUnderline0()
     {
         printEscString("[24m");
     }
 
-    void setTextAttrReverse1()
+    public void setTextAttrReverse1()
     {
         printEscString("[7m");
     }
 
-    void setTextAttrReverse0()
+    public void setTextAttrReverse0()
     {
         printEscString("[27m");
     }
 
-    void setTextAttrStrike1()
+    public void setTextAttrStrike1()
     {
         printEscString("[9m");
     }
 
-    void setTextAttrStrike0()
+    public void setTextAttrStrike0()
     {
         printEscString("[29m");
     }
@@ -398,7 +423,7 @@ public class ConsoleInputOutput
      * Set the font size for specified line
      * @param n Line format from 0 to 3 as following: Normal, Double width, Double size upper half, Double size lower half
      */
-    void setLineFormat(int n)
+    public void setLineFormat(int n)
     {
         switch (n)
         {
@@ -417,7 +442,7 @@ public class ConsoleInputOutput
      * @param first First line
      * @param last Last line
      */
-    void setScrollRegion(int first, int last)
+    public void setScrollRegion(int first, int last)
     {
         if ((first < 0) || (last < 0))
         {
@@ -432,7 +457,7 @@ public class ConsoleInputOutput
     /***
      * Scroll one line down
      */
-    void scrollDn()
+    public void scrollDn()
     {
         printString("\n");
         printFlush();
@@ -441,7 +466,7 @@ public class ConsoleInputOutput
     /**
      * Scroll one line up
      */
-    void scrollUp()
+    public void scrollUp()
     {
         printEscString("M");
     }
@@ -453,7 +478,7 @@ public class ConsoleInputOutput
     /**
      * Reset character size data
      */
-    void charSizeReset(boolean charSizeDuospace_)
+    public void charSizeReset(boolean charSizeDuospace_)
     {
         charSizeDuospace = charSizeDuospace_;
         charSizeMap.clear();
@@ -475,14 +500,27 @@ public class ConsoleInputOutput
         charSizeMap.put((int)CommonTools.splitterText, 1);
         charSizeMap.put((int)CommonTools.splitterInfo, 1);
     }
-    
+
+
     /**
      * Get character size for proper text wrap
      * @param chr Character number
      * @return Character size in text cells
      */
-    int charSize(int chr)
+    public int charSize(int chr)
     {
+        // High surrogate
+        if ((chr >= 0xD800) && (chr < 0xDBFF))
+        {
+            throw new RuntimeException("High surrogate character");
+        }
+
+        // Low surrogate
+        if ((chr >= 0xDC00) && (chr < 0xDFFF))
+        {
+            throw new RuntimeException("Low surrogate character");
+        }
+
         if (charSizeDuospace)
         {
             if (chr < 128)
@@ -499,7 +537,20 @@ public class ConsoleInputOutput
             int tempX = terminalReport[1] - 1;
             int tempY = terminalReport[0] - 1;
 
-            printChar((char)chr);
+            int chrH = 0;
+            int chrL = 0;
+            
+            if (chr >= 0x10000)
+            {
+                chrH = ((chr - 0x10000) >> 10) + 0xD800;
+                printChar((char)chrH);
+                chrL = ((chr - 0x10000) & 0x3FF) + 0xDC00;
+                printChar((char)chrL);
+            }
+            else
+            {
+                printChar((char)chr);
+            }
             printFlush();
             getCursorPos();
             int tempX0 = terminalReport[1] - 1;
@@ -507,6 +558,19 @@ public class ConsoleInputOutput
             setCursorPos(tempX, tempY);
 
             charSizeMap.put(chr, tempX0 - tempX);
+
+            CommonTools.debug(Integer.toHexString(chr) + " ");
+            CommonTools.debug(chr + " ");
+            if (chr >= 0x10000)
+            {
+                CommonTools.debug((char)chrH + "" + (char)chrL);
+            }
+            else
+            {
+                CommonTools.debug((char)chr + "");
+            }
+            CommonTools.debug("=");
+            CommonTools.debugln((tempX0 - tempX) + "");
 
             return tempX0 - tempX;
         }

@@ -35,6 +35,8 @@ public class ConChat
     
     static String archFileLast = "";
     
+    static ArrayList<String> MarkdownBrowserFiles;
+    
     static void waitIndicate()
     {
         if (waitSignState > 0)
@@ -235,18 +237,18 @@ public class ConChat
         return "";
     }
     
-    static String modelInfoFromMessage(String rawInfo, int infoType)
+    static StringUTF modelInfoFromMessage(String rawInfo, int infoType)
     {
         String infoArray[];
         if (infoType < 10)
         {
-            infoArray = rawInfo.substring(3, rawInfo.length() - 3).split(CommonTools.splitterInfo + "");
+            infoArray = rawInfo.substring(3, rawInfo.length() - 3).split(CommonTools.splitterInfoS);
         }
         else
         {
             infoArray = rawInfo.split(",");
         }
-        StringBuilder sb = new StringBuilder();
+        StringUTF sb = new StringUTF();
         switch (infoType)
         {
             case 0: // Answer
@@ -254,7 +256,7 @@ public class ConChat
                 {
                     if (i > 1)
                     {
-                        sb.append(",");
+                        sb.append(',');
                     }
                     sb.append(infoArray[i]);
                 }
@@ -270,7 +272,9 @@ public class ConChat
                         String s = modelInfoFavNumber(infoArray[i], true);
                         if (s.isEmpty())
                         {
-                            sb.append("[" + infoArray[i] + "]");
+                            sb.append('[');
+                            sb.append(infoArray[i]);
+                            sb.append(']');
                         }
                         else
                         {
@@ -286,7 +290,7 @@ public class ConChat
                     }
                     else
                     {
-                        sb.append("?");
+                        sb.append('?');
                     }
                 }
                 break;
@@ -297,7 +301,7 @@ public class ConChat
                     {
                         t = t + CommonTools.strToInt(infoArray[i], 0);
                     }
-                    sb.append(t);
+                    sb.append("" + t + "");
                 }
                 break;
             case 9: // Raw text
@@ -311,7 +315,9 @@ public class ConChat
                         String s = modelInfoFavNumber(infoArray[i], true);
                         if (s.isEmpty())
                         {
-                            sb.append("[" + infoArray[i] + "]");
+                            sb.append('[');
+                            sb.append(infoArray[i]);
+                            sb.append(']');
                         }
                         else
                         {
@@ -327,7 +333,7 @@ public class ConChat
                     }
                     else
                     {
-                        sb.append("?");
+                        sb.append('?');
                     }
                 }
                 break;
@@ -339,7 +345,7 @@ public class ConChat
                         {
                             if (i > 0)
                             {
-                                sb.append(",");
+                                sb.append(',');
                             }
                             sb.append(modelInfoFavName(rawInfo.substring(i, i + 1), true));
                         }
@@ -351,7 +357,8 @@ public class ConChat
                 }
                 break;
         }
-        return sb.toString();
+        
+        return sb;
     }
     
     
@@ -527,7 +534,7 @@ public class ConChat
                 ScreenTextDisp_[10].supplyLine("$$Stats     Words  Characters  $$`Messages`");
                 break;
         }
-        ScreenTextDisp_[10].supplyLine("$$Current " + CommonTools.intToStr(msgLength0, 7) + "   " + CommonTools.intToStr(msgLength1, 9) + "   " + CommonTools.intToStr(msgLength2, 7) + "   $$" + modelInfoFromMessage(ScreenTextDisp_[workContext].getMessageInfo(modelInfoFromMessage(engineName, 11)), 10));
+        ScreenTextDisp_[10].supplyLine("$$Current " + CommonTools.intToStr(msgLength0, 7) + "   " + CommonTools.intToStr(msgLength1, 9) + "   " + CommonTools.intToStr(msgLength2, 7) + "   $$" + modelInfoFromMessage(ScreenTextDisp_[workContext].getMessageInfo(modelInfoFromMessage(engineName, 11).get()), 10).get());
         ScreenTextDisp_[10].supplyLine("$$History " + CommonTools.intToStr(ctxSummaryWrdUsed, 7) + "   " + CommonTools.intToStr(ctxSummaryChrUsed, 9) + "   " + CommonTools.intToStr(ctxSummaryMsgUsed, 7) + "$$");
         ScreenTextDisp_[10].supplyLine("$$Context " + CommonTools.intToStr(ctxSummaryWrd, 7) + "   " + CommonTools.intToStr(ctxSummaryChr, 9) + "   " + CommonTools.intToStr(ctxSummaryMsg, 7) + "$$");
         ScreenTextDisp_[10].supplyLine("");
@@ -859,11 +866,13 @@ public class ConChat
             ScreenTextInput_.reset();
             if (workState == 0)
             {
-                ScreenTextInput_.textValue = ScreenTextDisp.convMultiToSingle(ScreenTextDisp_[workContext].getLastQuestion(false));
+                ScreenTextInput_.textValue.clear();
+                ScreenTextInput_.textValue.append(ScreenTextDisp.convMultiToSingle(ScreenTextDisp_[workContext].getLastQuestion(false)));
             }
             if (workState == 1)
             {
-                ScreenTextInput_.textValue = "~" + CF.ParamGetS("Hint" + workContext);
+                ScreenTextInput_.textValue.clear();
+                ScreenTextInput_.textValue.append("~").append(CF.ParamGetS("Hint" + workContext));
             }
             ScreenTextInput_.textPos = -1;
             return false;
@@ -1271,7 +1280,7 @@ public class ConChat
                     {
                         if (!ScreenTextDisp_[workContext].getMessageInfo("").isBlank())
                         {
-                            cmd = modelInfoFromMessage(ScreenTextDisp_[workContext].getMessageInfo(""), 10);
+                            cmd = modelInfoFromMessage(ScreenTextDisp_[workContext].getMessageInfo(""), 10).get();
                             if (CommonTools.strOnlyDigits(cmd))
                             {
                                 CF.ParamSet("Model", cmd);
@@ -1329,13 +1338,13 @@ public class ConChat
         ScreenTextDisp_[workContext].displayAll();
     }
     
-    static boolean questionIsHint(String Hint)
+    static boolean questionIsHint(StringUTF Hint)
     {
         if (Hint.length() < 1)
         {
             return false;
         }
-        char hintChar = Hint.charAt(0);
+        int hintChar = Hint.charAt(0);
         boolean isHint = false;
         if (hintChar == '`') isHint = true;
         if (hintChar == '~') isHint = true;
@@ -1349,19 +1358,19 @@ public class ConChat
         return isHint;
     }
     
-    static String questionGetHint(String Hint)
+    static StringUTF questionGetHint(StringUTF Hint)
     {
         if (Hint.length() < 1)
         {
-            return "";
+            return new StringUTF();
         }
-        return Hint.substring(1).trim();
+        return Hint.clone().substring(1).trim();
     }
     
-    static void questionSetHint(String Question_)
+    static void questionSetHint(StringUTF Question_)
     {
-        String Hint = questionGetHint(Question_);
-        if ((Hint.length() == 2) && CommonTools.strOnlyDigits(Hint))
+        StringUTF Hint = questionGetHint(Question_);
+        if ((Hint.length() == 2) && Hint.isDigitsOnly())
         {
             int ctxSrc = (((int)Hint.charAt(0)) - 48);
             int ctxDst = (((int)Hint.charAt(1)) - 48);
@@ -1370,7 +1379,7 @@ public class ConChat
         }
         else
         {
-            CF.ParamSet("Hint" + workContext, Hint);
+            CF.ParamSet("Hint" + workContext, Hint.get());
         }
         CF.FileSave(CommonTools.applDir + CommonTools.configFileName);
         if (workState == 1)
@@ -1385,13 +1394,21 @@ public class ConChat
      */
     public static void main(String[] args)
     {
-        if (args.length > 0)
+        //(new StringUTFTest()).test();
+        
+        MarkdownBrowserFiles = new ArrayList<String>();
+        
+        CommonTools.applDir = CommonTools.correctDir(CommonTools.getApplDir(0));
+        for (int i = 0; i < args.length; i++)
         {
-            CommonTools.applDir = CommonTools.correctDir(args[0]);
-        }
-        else
-        {
-            CommonTools.applDir = CommonTools.correctDir(CommonTools.getApplDir(0));
+            if (CommonTools.fileGetType(args[i]) == 1)
+            {
+                MarkdownBrowserFiles.add(args[i]);
+            }
+            if (CommonTools.fileGetType(args[i]) == 2)
+            {
+                CommonTools.applDir = CommonTools.correctDir(args[i]);
+            }
         }
         
         CF = new ConfigFile();
@@ -1399,7 +1416,7 @@ public class ConChat
         CFC = new ConfigFile();
         CFC.FileLoad(CommonTools.applDir + CommonTools.counterFileName);
         
-        boolean appUnusable = false;
+        /*boolean appUnusable = false;
 
         if (CF.ParamGetS("KeyGpt").isBlank() && CF.ParamGetS("KeyGemini").isBlank() && CF.ParamGetS("KeyClaude").isBlank())
         {
@@ -1418,6 +1435,11 @@ public class ConChat
             System.out.println("");
             System.out.println("The config.txt file not found or the file does not contain any API key.");
             return;
+        }*/
+        
+        if (CF.ParamGetS("Model").trim().isEmpty())
+        {
+            CF.ParamSet("Model", "?");
         }
 
         EngineName = new ArrayList<>();
@@ -1559,10 +1581,16 @@ public class ConChat
                 switch (key)
                 {
                     case (ConsoleInputOutput.keySpecialNum + 1):
-                        ScreenTextDisp_[ctx].displayScrollUp(1);
+                        if (!ScreenTextDisp_[ctx].displayScrollUp(1))
+                        {
+                            ConsoleInputOutput_.ringBell();
+                        }
                         break;
                     case (ConsoleInputOutput.keySpecialNum + 2):
-                        ScreenTextDisp_[ctx].displayScrollDn(1);
+                        if (!ScreenTextDisp_[ctx].displayScrollDn(1))
+                        {
+                            ConsoleInputOutput_.ringBell();
+                        }
                         break;
                     case (ConsoleInputOutput.keySpecialNum + 3):
                         if (!ScreenTextDisp_[ctx].blockScroll(scrollColumnSize))
@@ -1577,27 +1605,25 @@ public class ConChat
                         }
                         break;
                     case (ConsoleInputOutput.keySpecialNum + 15):
-                        ScreenTextDisp_[ctx].displayScrollUp(pageSize);
+                        if (!ScreenTextDisp_[ctx].displayScrollUp(pageSize))
+                        {
+                            ConsoleInputOutput_.ringBell();
+                        }
                         break;
                     case (ConsoleInputOutput.keySpecialNum + 16):
-                        ScreenTextDisp_[ctx].displayScrollDn(pageSize);
+                        if (!ScreenTextDisp_[ctx].displayScrollDn(pageSize))
+                        {
+                            ConsoleInputOutput_.ringBell();
+                        }
                         break;
                     case (ConsoleInputOutput.keySpecialNum + 13):
-                        if (ScreenTextDisp_[ctx].displayScrollUp(-1))
-                        {
-                            
-                        }
-                        else
+                        if (!ScreenTextDisp_[ctx].displayScrollUp(-1))
                         {
                             work = ScreenTextInput_.keyEvent(key);
                         }
                         break;
                     case (ConsoleInputOutput.keySpecialNum + 14):
-                        if (ScreenTextDisp_[ctx].displayScrollDn(-1))
-                        {
-                            
-                        }
-                        else
+                        if (!ScreenTextDisp_[ctx].displayScrollDn(-1))
                         {
                             work = ScreenTextInput_.keyEvent(key);
                         }
@@ -1617,8 +1643,8 @@ public class ConChat
                         break;
                 }
             }
-            String S = ScreenTextInput_.textValue.trim();
-            String S_ = ScreenTextInput_.textValue;
+            StringUTF S = ScreenTextInput_.textValue.clone().trim();
+            StringUTF S_ = ScreenTextInput_.textValue.clone();
             ScreenTextInput_.reset();
 
             if (S.length() == 0)
@@ -1641,7 +1667,7 @@ public class ConChat
             }
             if (S.length() > 0)
             {
-                if (isStandardCommand(S))
+                if (isStandardCommand(S.get()))
                 {
                     if (questionIsHint(S))
                     {
@@ -1671,15 +1697,15 @@ public class ConChat
                                     {
                                         if (engineI > 0)
                                         {
-                                            totalTokensInfo = totalTokensInfo + CommonTools.splitterInfo;
+                                            totalTokensInfo = totalTokensInfo + CommonTools.splitterInfoS;
                                         }
-                                        totalTokensInfo = totalTokensInfo + "1" + CommonTools.splitterInfo + modelTalkList.get(engineI);
+                                        totalTokensInfo = totalTokensInfo + "1" + CommonTools.splitterInfoS + modelTalkList.get(engineI);
                                     }
 
 
-                                    int questionPrevIdx = CommonTools.strToInt(ScreenTextDisp_[workContext].getLastQuestion(true), -1);
-                                    String questionPrev = ScreenTextDisp.convMultiToSingle(ScreenTextDisp_[workContext].getLastQuestion(false));
-                                    String questionNext = ScreenTextDisp.convMultiToSingle(S);
+                                    int questionPrevIdx = CommonTools.strToInt(ScreenTextDisp_[workContext].getLastQuestion(true).get(), -1);
+                                    StringUTF questionPrev = ScreenTextDisp.convMultiToSingle(ScreenTextDisp_[workContext].getLastQuestion(false));
+                                    StringUTF questionNext = ScreenTextDisp.convMultiToSingle(S);
                                     boolean questionTheSame = questionPrev.equals(questionNext);
 
 
@@ -1774,7 +1800,8 @@ public class ConChat
                                     // Measure new characters to avid display glitches
                                     for (int engineI = 0; engineI < engineTalkList.size(); engineI++)
                                     {
-                                        for (int i = 0; i < engineTalkList.get(engineI).answer.length(); i++)
+                                        int answerL = engineTalkList.get(engineI).answer.length();
+                                        for (int i = 0; i < answerL; i++)
                                         {
                                             ConsoleInputOutput_.charSize(engineTalkList.get(engineI).answer.charAt(i));
                                         }
@@ -1803,9 +1830,9 @@ public class ConChat
                                     {
                                         if (engineI > 0)
                                         {
-                                            totalTokensInfo = totalTokensInfo + CommonTools.splitterInfo;
+                                            totalTokensInfo = totalTokensInfo + CommonTools.splitterInfoS;
                                         }
-                                        totalTokensInfo = totalTokensInfo + engineTalkList.get(engineI).tokensI + "" + CommonTools.splitterInfo + engineTalkList.get(engineI).engineName;
+                                        totalTokensInfo = totalTokensInfo + engineTalkList.get(engineI).tokensI + CommonTools.splitterInfoS + engineTalkList.get(engineI).engineName;
                                     }
 
                                     if (!questionTheSame)
@@ -1813,11 +1840,11 @@ public class ConChat
                                         ScreenTextDisp_[ctx].supplyLine("");
                                         ScreenTextDisp_[ctx].messageIdxCounter = ScreenTextDisp_[ctx].textMsg.size();
                                     }
-                                    int tempMsgTokens = CommonTools.strToInt(ConChat.modelInfoFromMessage("!!!" + totalTokensInfo + "!!!", 8), -1);
-                                    String tempMsgModel = ConChat.modelInfoFromMessage("!!!" + totalTokensInfo + "!!!", 0);
+                                    int tempMsgTokens = CommonTools.strToInt(ConChat.modelInfoFromMessage("!!!" + totalTokensInfo + "!!!", 8).get(), -1);
+                                    String tempMsgModel = ConChat.modelInfoFromMessage("!!!" + totalTokensInfo + "!!!", 0).get();
                                     if (!questionTheSame)
                                     {
-                                        ScreenTextDisp_[ctx].textMsg.add(new ScreenTextDispMessage(false, S, tempMsgTokens, tempMsgModel));
+                                        ScreenTextDisp_[ctx].textMsg.add(new ScreenTextDispMessage(false, new StringUTF(S), tempMsgTokens, tempMsgModel));
                                         ScreenTextDisp_[ctx].supplyLine("___<<<" + totalTokensInfo + "<<<___");
                                         ScreenTextDisp_[ctx].supplyLine("");
                                         ScreenTextDisp_[ctx].supplyLine(ScreenTextDisp.convPlainToMarkdown(S));
@@ -1830,9 +1857,9 @@ public class ConChat
                                         ScreenTextDisp_[ctx].supplyLine("");
                                         ScreenTextDisp_[ctx].messageIdxCounter = ScreenTextDisp_[ctx].textMsg.size();
                                         ScreenTextDisp_[ctx].textMsg.add(new ScreenTextDispMessage(true, engineTalkList.get(engineI).answer, engineTalkList.get(engineI).tokensO, engineTalkList.get(engineI).tokensE));
-                                        ScreenTextDisp_[ctx].supplyLine("___>>>" + engineTalkList.get(engineI).tokensO + "" + CommonTools.splitterInfo + engineTalkList.get(engineI).tokensE + ">>>___");
+                                        ScreenTextDisp_[ctx].supplyLine("___>>>" + engineTalkList.get(engineI).tokensO + CommonTools.splitterInfoS + engineTalkList.get(engineI).tokensE + ">>>___");
                                         ScreenTextDisp_[ctx].supplyLine("");
-                                        ScreenTextDisp_[ctx].supplyLine(engineTalkList.get(engineI).answer);
+                                        ScreenTextDisp_[ctx].supplyLine(engineTalkList.get(engineI).answer.get());
                                     }                                
 
 
@@ -1845,8 +1872,8 @@ public class ConChat
                                 break;
                             case 1: // Settings
                                 {
-                                    S = S.trim().toLowerCase();
-                                    sendSettingsCommand(S, ChatEngineGpt_, ChatEngineGemini_, ChatEngineClaude_, ChatEngineDummy_, true);
+                                    S = new StringUTF(S.clone().trim().get().toLowerCase());
+                                    sendSettingsCommand(S.get(), ChatEngineGpt_, ChatEngineGemini_, ChatEngineClaude_, ChatEngineDummy_, true);
                                     ScreenTextDisp_[workContextCount].displayAll();
                                 }
                                 break;

@@ -444,7 +444,7 @@ public class ChatEngine
                     {
                         ctxTokens += ctx.get(i).tokens;
                         String ctxItem = (ctx.get(i).isAnswer ? ">>>: " : "<<<: ");
-                        String answerPart = CommonTools.stringReplaceMultiply(ctx.get(i).message, "\n", " ");
+                        String answerPart = CommonTools.stringReplaceMultiply(ctx.get(i).message.get(), "\n", " ");
                         if (answerPart.length() > 50)
                         {
                             answerPart = answerPart.substring(answerPart.length() - 50);

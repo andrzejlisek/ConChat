@@ -21,8 +21,8 @@ class TalkObject
     
     public ArrayList<ScreenTextDispMessage> ctx;
     public String ctxModel;
-    public String question;
-    public String answer;
+    public StringUTF question;
+    public StringUTF answer;
 
     public String engineName;
     public int tokensI = 0;
@@ -46,13 +46,13 @@ class TalkObject
         eWork = new ChatEngine(ex_);
     }
     
-    void talkPrepare(ArrayList<ScreenTextDispMessage> ctx_, String ctxModel_, String question_)
+    void talkPrepare(ArrayList<ScreenTextDispMessage> ctx_, String ctxModel_, StringUTF question_)
     {
         talkError = false;
         ctx = ctx_;
         ctxModel = ctxModel_;
-        question = question_;
-        answer = "?";
+        question = question_.clone();
+        answer = new StringUTF("?");
         if (e1.isActive)
         {
             if (eWork.objType == e1.objType)
@@ -101,7 +101,7 @@ class TalkObject
     
     void talk()
     {
-        answer = eWork.chatTalk(ctx, ctxModel, question, false);
+        answer = new StringUTF(eWork.chatTalk(ctx, ctxModel, question.get(), false));
         tokensI = eWork.tokensI;
         tokensO = eWork.tokensO;
         tokensE = eWork.tokensE;
