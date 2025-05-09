@@ -80,7 +80,7 @@ public class ChatEngineGemini extends ChatEngine
             {
                 ctxTokens += ctx.get(i).tokens;
                 messages_ = new JSONArray();
-                messages_.put(new JSONObject().put("text", ctx.get(i).message));
+                messages_.put(new JSONObject().put("text", ctx.get(i).message.get()));
                 messages.put(new JSONObject().put("role", ctx.get(i).isAnswer ? "model" : "user").put("parts", messages_));
             }
         }

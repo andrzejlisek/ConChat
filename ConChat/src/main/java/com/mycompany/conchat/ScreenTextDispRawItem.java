@@ -18,8 +18,8 @@ public class ScreenTextDispRawItem
     int lineNumber;
     int MessageIdx;
     textTypeDef textType = textTypeDef.normal;
-    String textLine;
-    String textLineWrap;
+    StringUTF textLine;
+    StringUTF textLineWrap;
     int textLineCells;
     int textLineLength;
     int[] textLineCharSize;
@@ -36,8 +36,8 @@ public class ScreenTextDispRawItem
     {
         textType = textTypeDef.normal;
         lineFormat = 0;
-        textLine = "";
-        textLineWrap = "";
+        textLine = new StringUTF();
+        textLineWrap = new StringUTF();
         textLineCharSize = null;
         lineNumber = lineNumber_;
         cmdIdx = new ArrayList<>();
@@ -54,8 +54,8 @@ public class ScreenTextDispRawItem
     {
         textType = item.textType;
         lineFormat = item.lineFormat;
-        textLine = "";
-        textLineWrap = "";
+        textLine = new StringUTF();
+        textLineWrap = new StringUTF();
         textLineCharSize = null;
         lineNumber = item.lineNumber;
         cmdIdx = new ArrayList<>();
@@ -68,8 +68,8 @@ public class ScreenTextDispRawItem
         alignRight = item.alignRight;
         if (clone)
         {
-            textLine = item.textLine;
-            textLineWrap = item.textLineWrap;
+            textLine = item.textLine.clone();
+            textLineWrap = item.textLineWrap.clone();
             for (int i = 0; i < item.cmdIdx.size(); i++)
             {
                 cmdIdx.add(item.cmdIdx.get(i));
@@ -115,17 +115,17 @@ public class ScreenTextDispRawItem
             }
         }
     }
-    
-    public void append(char chr)
+
+    public void append(int chr)
     {
-        textLine = textLine + chr;
+        textLine.append(chr);
     }
 
-    public void insert(int idx, String str, boolean insPad)
+    public void insert(int idx, StringUTF str, boolean insPad)
     {
         if (idx == 0)
         {
-            textLine = str + textLine;
+            textLine.prepend(str);
             for (int i = 0; i < cmdIdx.size(); i++)
             {
                 if (insPad)
@@ -148,11 +148,11 @@ public class ScreenTextDispRawItem
         {
             if (idx == textLine.length())
             {
-                textLine = textLine + str;
+                textLine.append(str);
             }
             else
             {
-                textLine = textLine.substring(0, idx) + str + textLine.substring(idx);
+                textLine.insert(idx, str);
                 for (int i = 0; i < cmdIdx.size(); i++)
                 {
                     if (insPad)
@@ -182,7 +182,7 @@ public class ScreenTextDispRawItem
             return;
         }
         
-        textLine = CommonTools.stringRemove(textLine, idx, n);
+        textLine.remove(idx, n);
         for (int i = 0; i < cmdIdx.size(); i++)
         {
             if (cmdIdx.get(i) > (idx + n))
@@ -244,18 +244,19 @@ public class ScreenTextDispRawItem
     
     public void debugCmds()
     {
-        textLine = textLine + "{";
+        textLine.append("{");
         for (int i = 0; i < cmdIdx.size(); i++)
         {
-            textLine = textLine + "[" + cmdIdx.get(i) + "=" + cmdTxt.get(i) + "]";
+            textLine.append("[" + cmdIdx.get(i) + "=" + cmdTxt.get(i) + "]");
         }
-        textLine = textLine + "}";
+        textLine.append("}");
     }
     
     public void unWrap(ScreenTextDispRawItem src)
     {
         int cmdOffset = textLine.length() + textLineWrap.length();
-        textLine = textLine + textLineWrap + src.textLine;
+        textLine.append(textLineWrap);
+        textLine.append(src.textLine);
         src.cmdTrim();
         for (int i = 0; i < src.cmdIdx.size(); i++)
         {
@@ -263,7 +264,7 @@ public class ScreenTextDispRawItem
             cmdTxt.add(src.cmdTxt.get(i));
         }
         
-        src.textLine = "";
+        src.textLine.clear();
         src.cmdIdx.clear();
         src.cmdTxt.clear();
     }
@@ -271,8 +272,8 @@ public class ScreenTextDispRawItem
     public void moveSuffix(ScreenTextDispRawItem src, int split)
     {
         int l = textLine.length();
-        textLine = textLine + src.textLine.substring(split);
-        src.textLine = src.textLine.substring(0, split);
+        textLine.append(src.textLine.clone().substring(split));
+        src.textLine.substring(0, split);
         boolean wrap1 = false;
         boolean wrap2 = false;
         boolean wrap3 = false;

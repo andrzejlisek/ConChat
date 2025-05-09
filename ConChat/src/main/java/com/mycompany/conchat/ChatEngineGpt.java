@@ -101,7 +101,7 @@ public class ChatEngineGpt extends ChatEngine
             if (ctxMatch(ctx.get(i), ctxModel))
             {
                 ctxTokens += ctx.get(i).tokens;
-                messages.put(new JSONObject().put("role", ctx.get(i).isAnswer ? "assistant" : "user").put("content", ctx.get(i).message));
+                messages.put(new JSONObject().put("role", ctx.get(i).isAnswer ? "assistant" : "user").put("content", ctx.get(i).message.get()));
             }
         }
         messages.put(new JSONObject().put("role", "user").put("content", msg));

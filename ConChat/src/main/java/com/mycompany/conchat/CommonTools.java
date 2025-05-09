@@ -30,49 +30,49 @@ import org.json.JSONObject;
  */
 public class CommonTools
 {
-    static char tableH = 0x2500;
-    static char tableV = 0x2502;
-    static char tableC = 0x253C;
+    static int tableH = 0x2500;
+    static int tableV = 0x2502;
+    static int tableC = 0x253C;
 
-    static char tableT = 0x252C;
-    static char tableB = 0x2534;
-    static char tableL = 0x251C;
-    static char tableR = 0x2524;
+    static int tableT = 0x252C;
+    static int tableB = 0x2534;
+    static int tableL = 0x251C;
+    static int tableR = 0x2524;
 
-    static char table1 = 0x250C;
-    static char table2 = 0x2510;
-    static char table3 = 0x2514;
-    static char table4 = 0x2518;
+    static int table1 = 0x250C;
+    static int table2 = 0x2510;
+    static int table3 = 0x2514;
+    static int table4 = 0x2518;
     
     /**
      * Block horizontal scroll indicator on the left edge
      */
-    static char scrollL = 0x25C4;
+    static int scrollL = 0x25C4;
     
     /**
      * Block horizontal scroll indicator on the right edge
      */
-    static char scrollR = 0x25BA;
+    static int scrollR = 0x25BA;
     
     /**
      * Background outside the chat text
      */
-    static char background = 0x2592;
+    static int background = 0x2592;
     
     /**
      * Splitter between chat messages
      */
-    static char splitterMsg = 0x2550;
+    static int splitterMsg = 0x2550;
 
     /**
      * Splitter within message
      */
-    static char splitterText = 0x2500;
+    static int splitterText = 0x2500;
     
-    static char splitterInfo = ' ';
+    static int splitterInfo = ' ';
     static String splitterInfoS = " ";
     
-    static char modelNameBlankChar = '.';
+    static int modelNameBlankChar = '.';
     static String modelNameBlankCharS = ".";
     
     static String applDir = "";
@@ -322,6 +322,14 @@ public class CommonTools
         }
     }
 
+    static public int fileGetType(String fileName)
+    {
+        File F = new File(fileName);
+        if (F.isFile()) { return 1; }
+        if (F.isDirectory()) { return 2; }
+        return 0;
+    }
+    
     static public int fileGetSize(String fileName)
     {
         File F = new File(fileName);
@@ -513,7 +521,7 @@ public class CommonTools
 
     public static boolean strOnlyDigits(String str)
     {
-        for (int i = 1; i < str.length(); i++)
+        for (int i = 0; i < str.length(); i++)
         {
             if (!isChar(str.charAt(i), false, false, true, false))
             {
