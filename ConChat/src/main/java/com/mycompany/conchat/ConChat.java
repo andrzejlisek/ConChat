@@ -753,6 +753,11 @@ public class ConChat
             ScreenTextDisp_[10].supplyLine("");
         }
     }
+
+    static void contexLoadedRingBell(int i)
+    {
+        if (!ScreenTextDisp_[i].waitingReload) ConsoleInputOutput_.ringBell();
+    }
     
     static void contextReload(int i, boolean preservePositon)
     {
@@ -767,6 +772,9 @@ public class ConChat
         }
         ScreenTextDisp_[i].waitingReloadFileName = dataFileName;
         ScreenTextDisp_[i].waitingReloadPosition = dispLineNumber;
+        ScreenTextDisp_[i].fileName = "";
+        ScreenTextDisp_[i].clear(false);
+        ScreenTextDisp_[i].fileName = ScreenTextDisp_[i].waitingReloadFileName;
         ScreenTextDisp_[i].waitingReload = true;
     }
 
@@ -795,6 +803,7 @@ public class ConChat
         }
         ScreenTextDisp_[i].displayAll();
         ScreenTextInput_.repaintAll();
+        ConsoleInputOutput_.ringBell();
     }
     
     static boolean isStandardCommand(String cmd)
@@ -1560,13 +1569,14 @@ public class ConChat
         sendSettingsCommand(CommonTools.modelNameBlankCharS + CF.ParamGetS("Model") + CommonTools.modelNameBlankCharS, ChatEngineGpt_, ChatEngineGemini_, ChatEngineClaude_, ChatEngineDummy_, false);
         
         
-        ConsoleInputOutput_.ringBell();
+        //ConsoleInputOutput_.ringBell();
 
         
         ArrayList<TalkObject> engineTalkList = new ArrayList<>();
         
-        contextReloadWork(workContext);
         ScreenTextDisp_[workContext].displayAll();
+        ScreenTextInput_.repaintAll();
+        contextReloadWork(workContext);
         while (progWork)
         {
             int ctx = Math.min(workContext + workState * workContextCount, workContextCount);
@@ -1897,7 +1907,7 @@ public class ConChat
                 {
                     ScreenTextDisp_[ctx].displayAll();
                 }
-                ConsoleInputOutput_.ringBell();
+                contexLoadedRingBell(workContext);
             }
         }
         ConsoleInputOutput_.setTextAttrReset();
