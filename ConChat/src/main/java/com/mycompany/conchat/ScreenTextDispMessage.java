@@ -15,7 +15,7 @@ public class ScreenTextDispMessage
 {
     public int tokens;
     public String model;
-    public StringUTF message;
+    public String message;
     public boolean isAnswer;
     public boolean ommit;
     
@@ -86,10 +86,10 @@ public class ScreenTextDispMessage
         return 0;
     }
     
-    public ScreenTextDispMessage(boolean isAnswer_, StringUTF message_, int tokens_, String model_)
+    public ScreenTextDispMessage(boolean isAnswer_, String message_, int tokens_, String model_)
     {
         isAnswer = isAnswer_;
-        message = new StringUTF(message_);
+        message = message_;
         tokens = tokens_;
         model = model_;
         ommit = false;
@@ -117,23 +117,23 @@ public class ScreenTextDispMessage
         return sb.toString();
     }
     
-    public static ScreenTextDispMessage supplyArrayListToStr(boolean isAnswer_, ArrayList<StringUTF> msgBuf, int tokens_, String model_)
+    public static ScreenTextDispMessage supplyArrayListToStr(boolean isAnswer_, ArrayList<String> msgBuf, int tokens_, String model_)
     {
         if (tokens_ < 0)
         {
             return null;
         }
         
-        while ((msgBuf.size() > 0) && (msgBuf.get(msgBuf.size() - 1).isSpacesOnly()))
+        while ((msgBuf.size() > 0) && (msgBuf.get(msgBuf.size() - 1).trim().isEmpty()))
         {
             msgBuf.remove(msgBuf.size() - 1);
         }
-        while ((msgBuf.size() > 0) && (msgBuf.get(0).isSpacesOnly()))
+        while ((msgBuf.size() > 0) && (msgBuf.get(0).trim().isEmpty()))
         {
             msgBuf.remove(0);
         }
         
-        StringUTF sb = new StringUTF();
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < msgBuf.size(); i++)
         {
             if (i > 0)
@@ -142,10 +142,11 @@ public class ScreenTextDispMessage
             }
             sb.append(msgBuf.get(i));
         }
-        if (!isAnswer_) sb = ScreenTextDisp.convMarkdownToPlain(sb);
-        if (sb.length() > 0)
+        String sb_s = sb.toString();
+        if (!isAnswer_) sb_s = ScreenTextDisp.convMarkdownToPlain(sb_s);
+        if (sb_s.length() > 0)
         {
-            return new ScreenTextDispMessage(isAnswer_, sb, tokens_, model_);
+            return new ScreenTextDispMessage(isAnswer_, sb_s, tokens_, model_);
         }
         
         return null;

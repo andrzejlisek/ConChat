@@ -12,7 +12,7 @@ package com.mycompany.conchat;
 public class ScreenTextInput
 {
     ConsoleInputOutput ConsoleInputOutput_;
-    StringUTF textValue = null;
+    String textValue = "";
     int textPos = 0;
     int dispPos = 0;
     
@@ -22,12 +22,11 @@ public class ScreenTextInput
     public ScreenTextInput(ConsoleInputOutput ConsoleInputOutput__)
     {
         ConsoleInputOutput_ = ConsoleInputOutput__;
-        textValue = new StringUTF();
     }
     
     public void reset()
     {
-        textValue.clear();
+        textValue = "";
         textPos = 0;
         dispPos = 0;
         repaintAll();
@@ -59,10 +58,10 @@ public class ScreenTextInput
             int lastRow = last / ConsoleInputOutput_.screenWidth;
             int lastCol = last % ConsoleInputOutput_.screenWidth;
 
-            StringUTF strToPaint = textValue.clone().substring(dispPos);
+            String strToPaint = textValue.substring(dispPos);
             if (strToPaint.length() < last)
             {
-                strToPaint.append(' ', last - strToPaint.length());
+                strToPaint = strToPaint + CommonTools.stringIndent(last - strToPaint.length(), ' ');
             }
 
             int substrPtr = firstRow * ConsoleInputOutput_.screenWidth;
@@ -71,7 +70,7 @@ public class ScreenTextInput
                 int i_1 = (ii > firstRow) ? 0 : firstCol;
                 int i_2 = (ii < lastRow) ? ConsoleInputOutput_.screenWidth : lastCol;
                 ConsoleInputOutput_.setCursorPos(i_1, fieldPos + ii);
-                ConsoleInputOutput_.printString(strToPaint.clone().substring(substrPtr + i_1, substrPtr + i_2));
+                ConsoleInputOutput_.printString(strToPaint.substring(substrPtr + i_1, substrPtr + i_2));
                 substrPtr += ConsoleInputOutput_.screenWidth;
             }
         }
@@ -131,7 +130,7 @@ public class ScreenTextInput
             case 8:
                 if (textPos > 0)
                 {
-                    textValue.remove(textPos - 1, 1);
+                    textValue = textValue.substring(0, textPos - 1) + textValue.substring(textPos);
                     textPos--;
                     repaint1 = textPos - dispPos;
                     repaint2 = textValue.length() - dispPos + 1;
@@ -144,7 +143,7 @@ public class ScreenTextInput
             case ConsoleInputOutput.keySpecialNum + 12:
                 if (textPos < textValue.length())
                 {
-                    textValue.remove(textPos, 1);
+                    textValue = textValue.substring(0, textPos) + textValue.substring(textPos + 1);
                     repaint1 = textPos - dispPos;
                     repaint2 = textValue.length() - dispPos + 1;
                 }
@@ -179,7 +178,7 @@ public class ScreenTextInput
         }
         if ((key >= 32) && (key < ConsoleInputOutput.keySpecialNum) && (key != 127))
         {
-            textValue.insert(textPos, key);
+            textValue = textValue.substring(0, textPos) + (char)key + textValue.substring(textPos);
             textPos++;
             repaint1 = textPos - dispPos - 1;
             repaint2 = textValue.length() - dispPos + 1;

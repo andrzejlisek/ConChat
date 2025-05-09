@@ -3,7 +3,6 @@ com/mycompany/conchat/ChatEngineClaude.class
 com/mycompany/conchat/TalkObject.class
 com/mycompany/conchat/ConsoleInputOutput.class
 com/mycompany/conchat/ScreenTextInput.class
-com/mycompany/conchat/StringUTFTest.class
 com/mycompany/conchat/ConChat.class
 com/mycompany/conchat/ScreenTextDisp$1.class
 com/mycompany/conchat/ChatEngine$ctxMatchResult.class
@@ -17,4 +16,3 @@ com/mycompany/conchat/ConChat$2.class
 com/mycompany/conchat/ScreenTextDispMessage.class
 com/mycompany/conchat/ScreenTextDisp.class
 com/mycompany/conchat/CommonTools.class
-com/mycompany/conchat/StringUTF.class
