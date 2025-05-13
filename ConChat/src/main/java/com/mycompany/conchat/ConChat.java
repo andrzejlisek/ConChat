@@ -1358,38 +1358,16 @@ public class ConChat
         ScreenTextDisp_[workContext].displayAll();
     }
     
-    static boolean questionIsHint(StringUTF Hint)
+    static boolean questionSetHint(StringUTF Question_)
     {
-        if (Hint.length() < 1)
+        if (Question_.length() < 1)
         {
             return false;
         }
-        int hintChar = Hint.charAt(0);
-        boolean isHint = false;
-        if (hintChar == '`') isHint = true;
-        if (hintChar == '~') isHint = true;
-        if (isHint)
-        {
-            for (int i = 1; i < Hint.length(); i++)
-            {
-                if (Hint.charAt(i) == hintChar) return false;
-            }
-        }
-        return isHint;
-    }
-    
-    static StringUTF questionGetHint(StringUTF Hint)
-    {
-        if (Hint.length() < 1)
-        {
-            return new StringUTF();
-        }
-        return Hint.clone().substring(1).trim();
-    }
-    
-    static void questionSetHint(StringUTF Question_)
-    {
-        StringUTF Hint = questionGetHint(Question_);
+
+        if ((Question_.charAt(0) != '`') && (Question_.charAt(0) != '~')) return false;
+        
+        StringUTF Hint = Question_.clone().substring(1).trim();
         if ((Hint.length() == 2) && Hint.isDigitsOnly())
         {
             int ctxSrc = (((int)Hint.charAt(0)) - 48);
@@ -1407,14 +1385,32 @@ public class ConChat
             refreshSettingText();
             ScreenTextDisp_[workContextCount].displayAll();
         }
+        
+        return true;
     }
+
+    static boolean questionSetSearch(StringUTF Question_)
+    {
+        if (Question_.length() < 2)
+        {
+            return false;
+        }
+
+        if ((Question_.charAt(0) != '<') && (Question_.charAt(0) != '>')) return false;
+
+        StringUTF Hint = Question_.clone().substring(1).trim();
+        ScreenTextDisp_[workContext].displaySearchWord(Hint, Question_.charAt(0) == '<');
+        
+        return true;
+    }
+
     
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args)
     {
-        //(new StringUTFTest()).test();
+        // (new StringUTFTest()).test();
         
         MarkdownBrowserFiles = new ArrayList<String>();
         
@@ -1691,11 +1687,17 @@ public class ConChat
             {
                 if (isStandardCommand(S.get()))
                 {
-                    if (questionIsHint(S))
+                    boolean questionStd = true;
+                    if (questionSetHint(S))
                     {
-                        questionSetHint(S);
+                        questionStd = false;
                     }
-                    else
+                    if (questionSetSearch(S))
+                    {
+                        questionStd = false;
+                    }
+                    
+                    if (questionStd)
                     {
                         switch (workState)
                         {

@@ -183,20 +183,6 @@ There is examples for set hint:
 ~Please write long description including history context.
 ```
 
-The examples are not hints, due to hint character repeat, this text will be treated as regular question or model name, depending on current work state:
-
-```
-~Use the ~ character as logic negation.
-`I am programmer in `C++` language.
-```
-
-These hints can be written as following and will be interpreted as hint change command:
-
-```
-`Use the ~ character as logic negation.
-~I am programmer in `C++` language.
-```
-
 Fo clear the hint, jus use the single tilde or grave accent:
 
 ```
@@ -218,6 +204,17 @@ In order to copy the hint from context 6 to context 8, write one of following co
 The current context does not matter in copy action\.
 
 You can corrent the hint using the **copy** command within configuration state\. The current hint will be written in the edit field, preceeded by tilde\. Make the appropriate correction and press Enter to change the current hint\.
+
+## Text search
+
+You can search for any text within the conversation\. Use the **less than** or **greater than** character to perform the search as following:
+
+```
+<phrase
+>phrase
+```
+
+The **less than** character preforms backward search and the **greater than** character performs the forward search\. The current search algorithm is fery simple and the searcherd phrase must be within single line\. The recommended usage is the searching for single word\. If the word exists in the conversation, the conversation will be scrolled for expose the word\. Then, you can search for further occurences be repeat the search operation\.
 
 # Group conversation with several models
 

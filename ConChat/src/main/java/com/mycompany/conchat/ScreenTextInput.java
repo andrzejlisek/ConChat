@@ -71,7 +71,7 @@ public class ScreenTextInput
                 int i_1 = (ii > firstRow) ? 0 : firstCol;
                 int i_2 = (ii < lastRow) ? ConsoleInputOutput_.screenWidth : lastCol;
                 ConsoleInputOutput_.setCursorPos(i_1, fieldPos + ii);
-                ConsoleInputOutput_.printString(strToPaint.clone().substring(substrPtr + i_1, substrPtr + i_2));
+                ConsoleInputOutput_.printString(strToPaint.clone().substring(substrPtr + i_1, i_2 - i_1));
                 substrPtr += ConsoleInputOutput_.screenWidth;
             }
         }

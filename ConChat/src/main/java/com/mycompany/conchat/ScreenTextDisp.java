@@ -6,6 +6,7 @@
 package com.mycompany.conchat;
 
 import java.util.ArrayList;
+import java.util.Locale;
 
 /**
  *
@@ -1416,6 +1417,50 @@ public class ScreenTextDisp
         return (displayOffset_ != displayOffset);
     }
 
+    public void displaySearchWord(StringUTF word, boolean backward)
+    {
+        if (word.length() == 0) return;
+        if (displayOffset < 0) return;
+        if (displayOffset >= textRaw.size()) return;
+        
+        if ((backward) && (displayOffset > 0))
+        {
+            int idx = displayOffset - 1;
+            while (idx >= 0)
+            {
+                ScreenTextDispRawItem item_ = textRaw.get(idx);
+                if ((item_.textType == ScreenTextDispRawItem.textTypeDef.normal) || (item_.textType == ScreenTextDispRawItem.textTypeDef.code) || (item_.textType == ScreenTextDispRawItem.textTypeDef.table))
+                {
+                    if (item_.textLine.get().toUpperCase(Locale.ROOT).contains(word.get().toUpperCase(Locale.ROOT)))
+                    {
+                        displayOffset = idx;
+                        displayAll();
+                        return;
+                    }
+                }
+                idx--;
+            }
+        }
+        if ((!backward) && (displayOffset < (textRaw.size() - 1)))
+        {
+            int idx = displayOffset + 1;
+            while (idx < textRaw.size())
+            {
+                ScreenTextDispRawItem item_ = textRaw.get(idx);
+                if ((item_.textType == ScreenTextDispRawItem.textTypeDef.normal) || (item_.textType == ScreenTextDispRawItem.textTypeDef.code) || (item_.textType == ScreenTextDispRawItem.textTypeDef.table))
+                {
+                    if (item_.textLine.get().toUpperCase(Locale.ROOT).contains(word.get().toUpperCase(Locale.ROOT)))
+                    {
+                        displayOffset = idx;
+                        displayAll();
+                        return;
+                    }
+                }
+                idx++;
+            }
+        }
+    }
+    
     /**
      * Repaint the whole screen
      */
@@ -1525,8 +1570,6 @@ public class ScreenTextDisp
             }
             ConsoleInputOutput_.setCursorPos(0, i);
             ConsoleInputOutput_.setLineFormat(0);
-            int ii_min = 0;
-            int ii_max = 0;
             int i_ = i + displayOffset - textOffsetLine;
             if (((i_) >= 0) && ((i_) < textRaw.size()))
             {
